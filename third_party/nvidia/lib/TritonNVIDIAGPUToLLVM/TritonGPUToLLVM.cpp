@@ -52,11 +52,11 @@ public:
       : ConversionTarget(ctx) {
     addLegalDialect<LLVM::LLVMDialect>();
     addLegalDialect<NVVM::NVVMDialect>();
-    addLegalDialect<mlir::triton::nvgpu::NVGPUDialect>();
-    addIllegalDialect<triton::TritonDialect>();
-    addIllegalDialect<triton::gpu::TritonGPUDialect>();
-    addIllegalDialect<triton::nvidia_gpu::TritonNvidiaGPUDialect>();
-    addIllegalDialect<mlir::gpu::GPUDialect>();
+    // addLegalDialect<mlir::triton::nvgpu::NVGPUDialect>();
+    // addIllegalDialect<triton::TritonDialect>();
+    // addIllegalDialect<triton::gpu::TritonGPUDialect>();
+    // addIllegalDialect<triton::nvidia_gpu::TritonNvidiaGPUDialect>();
+    // addIllegalDialect<mlir::gpu::GPUDialect>();
     addLegalOp<mlir::UnrealizedConversionCastOp>();
 
     // Warp specialization is lowered later.
@@ -109,10 +109,10 @@ struct ConvertTritonGPUToLLVM
 
     RewritePatternSet patterns(context);
     int benefit = patternBenefitPrioritizeOverLLVMConversions;
-    mlir::triton::NVIDIA::populateConvertLayoutOpToLLVMPatterns(
-        typeConverter, targetInfo, patterns, benefit);
-    // mlir::triton::NVIDIA::populateTensorMemorySubviewOpToLLVMPattern(
-    //     typeConverter, patterns, patternBenefitNvidiaTensorCoreSubviewPattern);
+    // mlir::triton::NVIDIA::populateConvertLayoutOpToLLVMPatterns(
+    //     typeConverter, targetInfo, patterns, benefit);
+    mlir::triton::NVIDIA::populateTensorMemorySubviewOpToLLVMPattern(
+        typeConverter, patterns, patternBenefitNvidiaTensorCoreSubviewPattern);
     // mlir::triton::NVIDIA::populateTMAToLLVMPatterns(typeConverter, targetInfo,
     //                                                 patterns, benefit);
     // populateDotOpToLLVMPatterns(typeConverter, patterns, benefit);
@@ -122,8 +122,8 @@ struct ConvertTritonGPUToLLVM
     // populateClampFOpToLLVMPattern(typeConverter, patterns, axisInfoAnalysis,
     //                               computeCapability,
     //                               patternBenefitClampOptimizedPattern);
-    populateLoadStoreOpToLLVMPatterns(typeConverter, targetInfo, patterns,
-                                      axisInfoAnalysis, benefit);
+    // populateLoadStoreOpToLLVMPatterns(typeConverter, targetInfo, patterns,
+    //                                   axisInfoAnalysis, benefit);
     // mlir::triton::populateReduceOpToLLVMPatterns(typeConverter, patterns,
     //                                              targetInfo, benefit);
     // mlir::triton::populateScanOpToLLVMPatterns(typeConverter, patterns,
@@ -131,29 +131,29 @@ struct ConvertTritonGPUToLLVM
     // mlir::triton::populateGatherOpToLLVMPatterns(typeConverter, patterns,
     //                                              targetInfo, benefit);
     // populateBarrierOpToLLVMPatterns(typeConverter, patterns, benefit);
-    populateTensorPtrOpsToLLVMPatterns(typeConverter, patterns, benefit);
-    populateClusterOpsToLLVMPatterns(typeConverter, patterns, benefit);
-    mlir::triton::populateHistogramOpToLLVMPatterns(typeConverter, patterns,
-                                                    targetInfo, benefit);
+    // populateTensorPtrOpsToLLVMPatterns(typeConverter, patterns, benefit);
+    // populateClusterOpsToLLVMPatterns(typeConverter, patterns, benefit);
+    // mlir::triton::populateHistogramOpToLLVMPatterns(typeConverter, patterns,
+    //                                                 targetInfo, benefit);
     // mlir::triton::populatePrintOpToLLVMPattern(typeConverter, patterns,
     //                                            targetInfo, benefit);
     // mlir::triton::proton::populateRecordOpToLLVMPattern(typeConverter, patterns,
     //                                                     targetInfo, benefit);
     mlir::triton::populateControlFlowOpToLLVMPattern(typeConverter, patterns,
                                                      targetInfo, benefit);
-    mlir::triton::NVIDIA::populateSPMDOpToLLVMPattern(typeConverter, patterns,
-                                                      benefit);
-    mlir::triton::populateSPMDOpToLLVMPattern(typeConverter, patterns,
-                                              targetInfo, benefit);
+    // mlir::triton::NVIDIA::populateSPMDOpToLLVMPattern(typeConverter, patterns,
+    //                                                   benefit);
+    // mlir::triton::populateSPMDOpToLLVMPattern(typeConverter, patterns,
+    //                                           targetInfo, benefit);
     // TODO(thomas): this should probably be done in a separate step to not
     // interfere with our own lowering of arith ops. Add arith/math's patterns
     // to help convert scalar expression to LLVM.
-    mlir::arith::populateCeilFloorDivExpandOpsPatterns(patterns);
+    // mlir::arith::populateCeilFloorDivExpandOpsPatterns(patterns);
     mlir::arith::populateArithToLLVMConversionPatterns(typeConverter, patterns);
     // mlir::populateMathToLLVMConversionPatterns(typeConverter, patterns);
-    mlir::populateGpuToNVVMConversionPatterns(typeConverter, patterns);
-    mlir::cf::populateControlFlowToLLVMConversionPatterns(typeConverter,
-                                                          patterns);
+    // mlir::populateGpuToNVVMConversionPatterns(typeConverter, patterns);
+    // mlir::cf::populateControlFlowToLLVMConversionPatterns(typeConverter,
+    //                                                       patterns);
     // mlir::ub::populateUBToLLVMConversionPatterns(typeConverter, patterns);
     mlir::triton::populateViewOpToLLVMPatterns(typeConverter, patterns,
                                                benefit);
@@ -163,8 +163,8 @@ struct ConvertTritonGPUToLLVM
     //     typeConverter, targetInfo, patterns, benefit);
     // mlir::triton::NVIDIA::populateTensorMemoryOpToLLVMPattern(
     //     typeConverter, patterns, benefit);
-    mlir::triton::populateMakeRangeOpToLLVMPattern(typeConverter, targetInfo,
-                                                   patterns, benefit);
+    // mlir::triton::populateMakeRangeOpToLLVMPattern(typeConverter, targetInfo,
+    //                                                patterns, benefit);
     // mlir::triton::NVIDIA::populateTCGen5MMAOpToLLVMPattern(typeConverter,
     //                                                        patterns, benefit);
     // mlir::triton::NVIDIA::populateFp4ToFpToLLVMPatterns(typeConverter, patterns,
