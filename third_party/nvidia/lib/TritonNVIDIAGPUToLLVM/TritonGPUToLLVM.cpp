@@ -111,8 +111,8 @@ struct ConvertTritonGPUToLLVM
     int benefit = patternBenefitPrioritizeOverLLVMConversions;
     // mlir::triton::NVIDIA::populateConvertLayoutOpToLLVMPatterns(
     //     typeConverter, targetInfo, patterns, benefit);
-    mlir::triton::NVIDIA::populateTensorMemorySubviewOpToLLVMPattern(
-        typeConverter, patterns, patternBenefitNvidiaTensorCoreSubviewPattern);
+    // mlir::triton::NVIDIA::populateTensorMemorySubviewOpToLLVMPattern(
+    //     typeConverter, patterns, patternBenefitNvidiaTensorCoreSubviewPattern);
     // mlir::triton::NVIDIA::populateTMAToLLVMPatterns(typeConverter, targetInfo,
     //                                                 patterns, benefit);
     // populateDotOpToLLVMPatterns(typeConverter, patterns, benefit);
@@ -149,14 +149,14 @@ struct ConvertTritonGPUToLLVM
     // interfere with our own lowering of arith ops. Add arith/math's patterns
     // to help convert scalar expression to LLVM.
     // mlir::arith::populateCeilFloorDivExpandOpsPatterns(patterns);
-    mlir::arith::populateArithToLLVMConversionPatterns(typeConverter, patterns);
+    // mlir::arith::populateArithToLLVMConversionPatterns(typeConverter, patterns);
     // mlir::populateMathToLLVMConversionPatterns(typeConverter, patterns);
     // mlir::populateGpuToNVVMConversionPatterns(typeConverter, patterns);
     // mlir::cf::populateControlFlowToLLVMConversionPatterns(typeConverter,
     //                                                       patterns);
     // mlir::ub::populateUBToLLVMConversionPatterns(typeConverter, patterns);
-    mlir::triton::populateViewOpToLLVMPatterns(typeConverter, patterns,
-                                               benefit);
+    // mlir::triton::populateViewOpToLLVMPatterns(typeConverter, patterns,
+    //                                            benefit);
     // mlir::triton::populateAssertOpToLLVMPattern(typeConverter, patterns,
     //                                             targetInfo, benefit);
     // mlir::triton::NVIDIA::populateMemoryOpToLLVMPatterns(
