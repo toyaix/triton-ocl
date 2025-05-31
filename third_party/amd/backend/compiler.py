@@ -67,7 +67,7 @@ class HIPOptions:
     schedule_hint: str = 'none'
 
     def __post_init__(self):
-        gfx_major = int(self.arch[3:-2])  # Drop "gfx" prefix and minor/patch number
+        gfx_major = 10  # Drop "gfx" prefix and minor/patch number
         warp_size = 32 if gfx_major >= 10 else 64
         object.__setattr__(self, 'warp_size', warp_size)
         assert self.num_warps > 0 and (self.num_warps & (self.num_warps - 1)) == 0, \

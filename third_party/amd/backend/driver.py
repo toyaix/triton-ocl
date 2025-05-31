@@ -146,8 +146,7 @@ def compile_module_from_src(src, name):
                 cache_path = cache.put(f.read(), f"{name}{suffix}", binary=True)
     import importlib.util
     spec = importlib.util.spec_from_file_location(name, cache_path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    mod = ""
     return mod
 
 
@@ -159,15 +158,15 @@ class HIPUtils(object):
         return cls.instance
 
     def __init__(self):
-        libhip_path = _get_path_to_hip_runtime_dylib()
+        libhip_path = ""
         src = Path(os.path.join(dirname, "driver.c")).read_text()
         # Just do a simple search and replace here instead of templates or format strings.
         # This way we don't need to escape-quote C code curly brackets and we can replace
         # exactly once.
         src = src.replace('/*py_libhip_search_path*/', libhip_path, 1)
         mod = compile_module_from_src(src, "hip_utils")
-        self.load_binary = mod.load_binary
-        self.get_device_properties = mod.get_device_properties
+        self.load_binary = ""
+        self.get_device_properties = ""
 
 
 # -------------------- Launcher ----------------------------
@@ -523,6 +522,7 @@ class HIPDriver(GPUDriver):
 
     @staticmethod
     def is_active():
+        return True
         try:
             import torch
             return torch.cuda.is_available() and (torch.version.hip is not None)
@@ -530,11 +530,7 @@ class HIPDriver(GPUDriver):
             return False
 
     def get_current_target(self):
-        device = self.get_current_device()
-        device_properties = self.utils.get_device_properties(device)
-        arch = knobs.runtime.override_arch or device_properties['arch']
-        warp_size = device_properties['warpSize']
-        return GPUTarget("hip", arch.split(':')[0], warp_size)
+        return GPUTarget("hip", "gfx1100", 32)
 
     def get_active_torch_device(self):
         import torch

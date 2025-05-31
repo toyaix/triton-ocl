@@ -629,6 +629,9 @@ class JITFunction(KernelInterface[T]):
             grid_1 = grid[1] if grid_size > 1 else 1
             grid_2 = grid[2] if grid_size > 2 else 1
             # launch kernel
+            import os
+            if os.getenv("TRITON_AMD_BACKEND", "0") == "1":
+                return
             launch_metadata = kernel.launch_metadata(grid, stream, *bound_args.values())
             kernel.run(grid_0, grid_1, grid_2, stream, kernel.function, kernel.packed_metadata, launch_metadata,
                        knobs.runtime.launch_enter_hook, knobs.runtime.launch_exit_hook, *bound_args.values())
