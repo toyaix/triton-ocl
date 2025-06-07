@@ -2,6 +2,7 @@ from triton.backends.compiler import BaseBackend, GPUTarget
 import functools
 import hashlib
 import os
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -105,11 +106,34 @@ class SPIRVBackend(BaseBackend):
         pm.run(mod)
         return mod
 
+    @staticmethod
+    def emit_opencl(src, metadata, opt):
+        import triton._C as tc
+        spirv_translate = os.path.join(tc.__path__[0], 'triton-spirv-translate')
+        with tempfile.NamedTemporaryFile(delete=False, mode='w', suffix='.memir') as fsrc:
+            fsrc.write(str(src))
+            fsrc.flush()
+            opencl_file = fsrc.name + '.cl'
+            emit_opencl_cmd = [
+                spirv_translate,
+                fsrc.name,
+                '-triton-spirv-emit-opencl',
+                '-o',
+                opencl_file
+            ]
+            print(" ".join(emit_opencl_cmd))
+            subprocess.run(emit_opencl_cmd, check=True, close_fds=False)
+            with open(opencl_file, 'rb') as f:
+                opencl_src = f.read()
+            if os.path.exists(opencl_file):
+                os.remove(opencl_file)
+        return opencl_src
+
     def add_stages(self, stages, options):
         stages["ttir"] = lambda src, metadata: self.make_ttir(src, metadata, options)
         stages["lair"] = lambda src, metadata: self.make_lair(src, metadata, options)
         stages["memir"] = lambda src, metadata: self.make_memir(src, metadata, options)
-        stages["llvmspvir"] = lambda src, metadata: self.make_llvmspvir(src, metadata, options)
+        stages["cl"] = lambda src, metadata: self.emit_opencl(src, metadata, options)
 
 
     @functools.lru_cache()
