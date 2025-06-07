@@ -1,4 +1,4 @@
-// build-opt/third_party/spirv/tool/spirv-opt third_party/spirv/test/add_kernel.ttir  --triton-to-linalg  --one-shot-bufferize --triton-linalg-to-affine-loops --affine-to-llvmspv -expand-strided-metadata -lower-affine -convert-arith-to-llvm -convert-scf-to-cf --finalize-memref-to-llvm -convert-func-to-llvm -convert-cf-to-llvm -reconcile-unrealized-casts  -o add_kernel.llvmspvir.mlir
+// build-opt/third_party/spirv/tool/spirv-opt third_party/spirv/test/add_kernel.memir --affine-to-llvmspv -expand-strided-metadata -lower-affine -convert-arith-to-llvm -convert-scf-to-cf --finalize-memref-to-llvm -convert-func-to-llvm -convert-cf-to-llvm -reconcile-unrealized-casts  -o add_kernel.llvmspvir.mlir
 module {
   llvm.func @memrefCopy(i64, !llvm.ptr, !llvm.ptr)
   llvm.func @malloc(i64) -> !llvm.ptr

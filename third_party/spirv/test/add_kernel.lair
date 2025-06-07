@@ -6,8 +6,8 @@ module {
   func.func @add_kernel(%arg0: memref<*xf32> {tt.divisibility = 16 : i32} loc("/home/ubuntu/triton-spirv/python/tutorials/spirv_demo/01-vector-add.py":29:0), %arg1: memref<*xf32> {tt.divisibility = 16 : i32} loc("/home/ubuntu/triton-spirv/python/tutorials/spirv_demo/01-vector-add.py":29:0), %arg2: memref<*xf32> {tt.divisibility = 16 : i32} loc("/home/ubuntu/triton-spirv/python/tutorials/spirv_demo/01-vector-add.py":29:0), %arg3: i32 {tt.divisibility = 16 : i32} loc("/home/ubuntu/triton-spirv/python/tutorials/spirv_demo/01-vector-add.py":29:0)) {
     %c1024 = arith.constant 1024 : index loc(#loc1)
     %c1024_i32 = arith.constant 1024 : i32 loc(#loc1)
-    %block_id_x = gpu.block_id  x loc(#loc2)
-    %0 = arith.index_cast %block_id_x : index to i32 loc(#loc2)
+    %global_id_x = gpu.global_id  x loc(#loc2)
+    %0 = arith.index_cast %global_id_x : index to i32 loc(#loc2)
     %1 = arith.muli %0, %c1024_i32 : i32 loc(#loc3)
     %2 = arith.index_cast %1 : i32 to index loc(#loc4)
     %reinterpret_cast = memref.reinterpret_cast %arg0 to offset: [%2], sizes: [1024], strides: [1] : memref<*xf32> to memref<1024xf32, strided<[1], offset: ?>> loc(#loc4)
