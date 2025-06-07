@@ -67,34 +67,50 @@ if cl.clEnqueueWriteBuffer:
 
 # Define OpenCL kernel source
 program_src = b"""
-__kernel void vec_add(__global float *a,
-                      __global float *b,
-                      __global float *c,
-                      int N) {
-    int id = get_global_id(0);
-    int lid = get_local_id(0);
-    __local float temp1[1024];
-    __local float temp2[1024];
-    __local float temp3[1024];
-    if (id < N) {
-        temp1[lid] = a[id];
-        temp2[lid] = b[id];
-        barrier(CLK_LOCAL_MEM_FENCE);
-        temp3[lid] = temp1[lid] + temp2[lid];
-        barrier(CLK_LOCAL_MEM_FENCE);
-        c[id] = temp3[lid];
-    }
+__kernel void add_kernel(
+  __global float* var_0,
+  __global float* var_1,
+  __global float* var_2,
+  int var_3
+) {	// L2
+  int var_4 = get_global_id(0);
+  int var_6 = var_4 * 1024;	// L7
+  __local float var_8[1024];	// L10
+  int var_9 = var_6 + 1024;	// L11
+  int var_11 = min(var_9, var_3);	// L13
+  int var_12 = max(var_11, var_6);	// L14
+  int var_13 = var_12 - var_6;	// L15
+  for (int i = 0; i < var_13; i += 1) {
+    var_8[i] = var_0[i + var_6];
+  }	// L18
+  barrier(CLK_LOCAL_MEM_FENCE);
+  __local float var_14[1024];	// L20
+  for (int i = 0; i < var_13; i += 1) {
+    var_14[i] = var_1[i + var_6];
+  }	// L23
+  barrier(CLK_LOCAL_MEM_FENCE);
+  for (int var_15 = 0; var_15 < 1024; var_15 += 1) {	// L24
+    float var_16 = var_8[var_15];	// L25
+    float var_17 = var_14[var_15];	// L26
+    float var_18 = var_16 + var_17;	// L27
+    var_8[var_15] = var_18;	// L28
+  }
+  for (int i = 0; i < var_13; i += 1) {
+    var_2[i + var_6] = var_8[i];
+  }	// L33
 }
 """
 
 program_src_ptr = ctypes.c_char_p(program_src)
 program_size = ctypes.c_size_t(len(program_src))
 program = cl.clCreateProgramWithSource(context, 1, ctypes.byref(program_src_ptr), ctypes.byref(program_size), ctypes.byref(err))
-c = cl.clBuildProgram(program, 1, devices, None, None, None)
-print(c)
+build_program = cl.clBuildProgram(program, 1, devices, None, None, None)
+if build_program != CL_SUCCESS:
+    print('clBuildProgram', build_program)
+    exit(0)
 
 # Create kernel and set arguments
-kernel = cl.clCreateKernel(program, b"vec_add", ctypes.byref(err))
+kernel = cl.clCreateKernel(program, b"add_kernel", ctypes.byref(err))
 cl.clSetKernelArg(kernel, 0, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(a_buf))
 cl.clSetKernelArg(kernel, 1, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(b_buf))
 cl.clSetKernelArg(kernel, 2, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(c_buf))
@@ -106,10 +122,10 @@ num_sm = (n + block_size - 1) // block_size
 
 # Launch kernel
 global_size = (ctypes.c_size_t * 3)(num_sm * block_size, 1, 1)
-local_size = (ctypes.c_size_t * 3)(block_size, 1, 1)
+local_size = (ctypes.c_size_t * 3)(1, 1, 1)
 launch_kenrel = cl.clEnqueueNDRangeKernel(queue, kernel, 3, None, global_size, local_size, 0, None, None)
 if launch_kenrel != CL_SUCCESS:
-    print('launch kenrel fail', launch_kenrel)
+    print('clEnqueueNDRangeKernel', launch_kenrel)
 cl.clFinish(queue)
 
 # Read results from device
