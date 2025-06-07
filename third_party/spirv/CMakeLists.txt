@@ -9,9 +9,7 @@ if(TRITON_BUILD_PYTHON_MODULE)
 endif()
 
 option(BUILD_SPIRV_OPT "build spirv-opt to debug" OFF)
-if(BUILD_SPIRV_OPT)
-  add_subdirectory(tool)
-endif()
+add_subdirectory(tool)
 
 option(TEST_SPIRV_CC "build triton_spirv.cc to test" OFF)
 if(TEST_SPIRV_CC)

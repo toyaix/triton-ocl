@@ -514,6 +514,8 @@ class CMakeBuild(build_ext):
         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=cmake_dir)
         subprocess.check_call(["cmake", "--build", ".", "--target", "mlir-doc"], cwd=cmake_dir)
 
+        translate_path = "third_party/spirv/tool/triton-spirv-translate/triton-spirv-translate"
+        shutil.copy(os.path.join(cmake_dir, translate_path), extdir)
 
 def download_and_copy_dependencies():
     nvidia_version_path = os.path.join(get_base_dir(), "cmake", "nvidia-toolchain-version.json")
