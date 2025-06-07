@@ -23,7 +23,7 @@ import torch
 import triton
 import triton.language as tl
 
-DEVICE = "cuda"
+DEVICE = "cpu"
 
 @triton.jit
 def add_kernel(x_ptr,  # *Pointer* to first input vector.
