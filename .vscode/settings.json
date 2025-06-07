@@ -2,6 +2,7 @@
     "files.associations": {
         "*.ttir": "mlir",
         "*.lair": "mlir",
-        "*.memir": "mlir"
+        "*.memir": "mlir",
+        "*.cl" : "cpp"
     }
 }
