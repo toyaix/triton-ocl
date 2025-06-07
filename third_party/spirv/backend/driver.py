@@ -55,8 +55,9 @@ class SPIRVLauncher(object):
     def __init__(self, src, metadata):
         pass
 
-    def __call__(self, *args, **kwargs):
-        self.launch(*args, **kwargs)
+    def __call__(self, gridX, gridY, gridZ, kernel_name, kernel_src, bound_args):
+        from triton.backends.spirv.cl_utils import launch
+        launch(gridX, gridY, gridZ, kernel_name, kernel_src, bound_args)
 
 
 class SPIRVDriver(DriverBase):

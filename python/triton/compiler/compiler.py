@@ -428,8 +428,6 @@ class AsmDict(dict):
 class CompiledKernel:
 
     def __init__(self, src, metadata_group, hash):
-        if os.getenv("TRITON_SPIRV_BACKEND", "0") == "1":
-            return
         from collections import namedtuple
         metadata_path = next((Path(p) for c, p in metadata_group.items() if c.endswith(".json")))
         metadata = json.loads(metadata_path.read_text())
@@ -464,6 +462,9 @@ class CompiledKernel:
         device = driver.active.get_current_device()
         # create launcher
         self.run = driver.active.launcher_cls(self.src, self.metadata)
+        import os
+        if os.getenv("TRITON_SPIRV_BACKEND", "0") == "1":
+            return
         # not enough shared memory to run the kernel
         max_shared = max_shared_mem(device)
         if self.metadata.shared > max_shared:

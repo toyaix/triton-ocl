@@ -46,7 +46,7 @@ class SPIRVBackend(BaseBackend):
 
     def __init__(self, target: tuple) -> None:
         super().__init__(target)
-        self.binary_ext = "so"
+        self.binary_ext = "cl"
 
     def parse_options(self, opts) -> Any:
         args = {k: opts[k] for k in SPIRVOptions.__dataclass_fields__.keys() if k in opts}
@@ -108,6 +108,10 @@ class SPIRVBackend(BaseBackend):
 
     @staticmethod
     def emit_opencl(src, metadata, opt):
+        import re
+        names = re.findall(r"func\.func @(\w+)\(", str(src))
+        assert len(names) == 1
+        metadata["name"] = names[0]
         import triton._C as tc
         spirv_translate = os.path.join(tc.__path__[0], 'triton-spirv-translate')
         with tempfile.NamedTemporaryFile(delete=False, mode='w', suffix='.memir') as fsrc:
@@ -121,7 +125,6 @@ class SPIRVBackend(BaseBackend):
                 '-o',
                 opencl_file
             ]
-            print(" ".join(emit_opencl_cmd))
             subprocess.run(emit_opencl_cmd, check=True, close_fds=False)
             with open(opencl_file, 'rb') as f:
                 opencl_src = f.read()
