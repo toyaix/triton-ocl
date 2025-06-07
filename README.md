@@ -20,6 +20,10 @@ TRITON_SPIRV_BACKEND=1 python python/tutorials/spirv_demo/01-vector-add.py
 
 ## Milestone
 
+### 2025.6.7
+
+Executed the [vector-add.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/01-vector-add.py) example and confirmed the correctness of results.
+
 ### 2025.5.17
 
 Add an empty SPIR-V backend to get ttir

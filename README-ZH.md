@@ -6,7 +6,7 @@
 
 ## 项目目标
 
-本项目参考和拷贝了[triton-lang/triton-cpu](https://github.com/triton-lang/triton-cpu) 和 [microsoft/triton-shared](https://github.com/microsoft/triton-shared) 的大部份代码，目标是提供一个接入`Triton`的样本，完成`tutorials`的适配，大概率是个`Toy`。并跑在`Nvidia`的卡上，目标达到仅使用`CUDA CORE`的`Kernel`性能的`50%`及以上。
+本项目参考和拷贝了[triton-lang/triton-cpu](https://github.com/triton-lang/triton-cpu) 和 [microsoft/triton-shared](https://github.com/microsoft/triton-shared) 的大部份代码，目标是提供一个接入`Triton`的样本，完成`tutorials`的适配，大概率是个`Toy`。并跑在`Nvidia`的卡上，目标达到仅使用`CUDA CORE`的`Kernel`性能的`50%`及以上。目前项目的[代码变动](https://github.com/triton-lang/triton/compare/main...OpenMLIR:triton-spirv-preview:develop)
 
 
 ## 项目运行
@@ -24,6 +24,9 @@ build-opt/third_party/spirv/tool/spirv-opt third_party/spirv/test/add_kernel.tti
 ```
 
 ## 里程碑
+
+### 2025.6.7
+[vector-add.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/01-vector-add.py) 跑通对上答案了
 
 ### 2025.5.17
 
