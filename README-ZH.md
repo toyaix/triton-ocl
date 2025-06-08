@@ -62,6 +62,8 @@ build-opt/third_party/spirv/tool/spirv-opt third_party/spirv/test/add_kernel.tti
 
 由于我需要看MLIR的源码实现，所以这里`clone`了`llvm/llvm-project`，只安装的话`setup.py`会帮你自动下载的，第二块可以忽略，下载好本项目直接`pip install -e .`即可。
 
+`Python 3.10` 的 ctypes 有**bug**，建议使用`Python 3.12`。
+
 ```bash
 # 克隆 本项目
 git clone https://github.com/OpenMLIR/triton-spirv.git
@@ -107,20 +109,32 @@ cmake -G Ninja .. -DLLVM_INCLUDE_DIRS=$LLVM_BUILD_DIR/include  -DLLVM_LIBRARY_DI
 
 ## 测试机配置
 
-先安装clinfo查看输出是否正常，并使用项目中的 `python/tutorials/spirv_demo/12-ctypes-cl.py` 测试
+先安装clinfo查看输出是否正常，并使用项目中的 `python/tutorials/spirv_demo/12-ctypes-cl.py` 测试。`Python 3.10`的`ctypes`会`Segmentation fault`，所以也可以先安装conda。
+
 ```bash
 git clone https://github.com/OpenMLIR/triton-spirv.git
 cd triton-spirv
+pip install numpy
 python3 python/tutorials/spirv_demo/12-ctypes-cl.py
 ```
-编译llvm还需要`cmake`和`ninja-build`，测试机就直接下载二进制了。`triton`对Python版本有要求，所以用conda环境，具体命令如下所示
+
+编译llvm还需要`cmake`和`ninja-build`，测试机就直接下载二进制了，如果系统glibc版本低还需要自己编译LLVM，我这里是`Ubuntu 22.04`。`Triton`对Python版本有要求，所以用conda环境，具体命令如下所示。
+
 ```bash
 wget https://repo.anaconda.com/archive/Anaconda3-2024.10-1-Linux-x86_64.sh
 bash Anaconda3-2024.10-1-Linux-x86_64.sh
 conda create --name triton python=3.12
 conda activate triton
 pip install -r python/requirements.txt
+pip install torch
 pip install -e . --no-build-isolation
+
+# GLIBCXX_3.4.30' not found解决
+conda install -c conda-forge libstdcxx-ng=12
+
+TRITON_SPIRV_BACKEND=1 python python/tutorials/spirv_demo/01-vector-add.py
+# 可能会缺少 ZLIB::ZLIB，target "LLVMSupport" contains，需要安装
+# sudo apt install zlib1g zlib1g-dev
 ```
 
 ---

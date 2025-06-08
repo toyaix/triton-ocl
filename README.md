@@ -11,6 +11,8 @@ subdirectory (similar to how GPU vendors are supported today).
 
 # How to use it?
 
+There are bugs in ctypes on Python 3.10; it’s recommended to use Python 3.12 to build.
+
 Build it like a normal Triton, but just pass TRITON_SPIRV_BACKEND=1 to use the SPIRV backend over a GPU backend, if any.
 
 ```bash
