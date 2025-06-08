@@ -104,6 +104,25 @@ mkdir build-opt; cd build-opt
 cmake -G Ninja .. -DLLVM_INCLUDE_DIRS=$LLVM_BUILD_DIR/include  -DLLVM_LIBRARY_DIR=$LLVM_BUILD_DIR/lib -DTRITON_CODEGEN_BACKENDS="nvidia;amd;spirv" -DCMAKE_BUILD_TYPE=Debug -DBUILD_SPIRV_OPT=ON -DTEST_SPIRV_CC=ON
 ```
 
+
+## 测试机配置
+
+先安装clinfo查看输出是否正常，并使用项目中的 `python/tutorials/spirv_demo/12-ctypes-cl.py` 测试
+```bash
+git clone https://github.com/OpenMLIR/triton-spirv.git
+cd triton-spirv
+python3 python/tutorials/spirv_demo/12-ctypes-cl.py
+```
+编译llvm还需要`cmake`和`ninja-build`，测试机就直接下载二进制了。`triton`对Python版本有要求，所以用conda环境，具体命令如下所示
+```bash
+wget https://repo.anaconda.com/archive/Anaconda3-2024.10-1-Linux-x86_64.sh
+bash Anaconda3-2024.10-1-Linux-x86_64.sh
+conda create --name triton python=3.12
+conda activate triton
+pip install -r python/requirements.txt
+pip install -e . --no-build-isolation
+```
+
 ---
 
 ## [Upstream README](https://github.com/OpenMLIR/triton-spirv?tab=readme-ov-file#upstream-readme)
