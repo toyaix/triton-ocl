@@ -9,6 +9,26 @@
 本项目参考和拷贝了[triton-lang/triton-cpu](https://github.com/triton-lang/triton-cpu) 和 [microsoft/triton-shared](https://github.com/microsoft/triton-shared) 的大部份代码，目标是提供一个接入`Triton`的样本，完成`tutorials`的适配，大概率是个`Toy`。并跑在`Nvidia`的卡上，目标达到仅使用`CUDA CORE`的`Kernel`性能的`50%`及以上。目前项目的[代码变动](https://github.com/triton-lang/triton/compare/main...OpenMLIR:triton-spirv-preview:develop)
 
 
+## 项目文档
+
+[Triton SPIR-V 后端开发：向量加实现验证](https://zhuanlan.zhihu.com/p/1914987075771561349)
+
+[Triton SPIR-V 后端开发：PyBind绑定](https://zhuanlan.zhihu.com/p/1914770426808206615)
+
+[Triton SPIR-V 后端开发：新增Pass](https://zhuanlan.zhihu.com/p/1914706253290120299)
+
+[Triton SPIR-V 后端开发：backend 初始化](https://zhuanlan.zhihu.com/p/1914706253290120299)
+
+
+## 作者相关技术文章
+
+[浅析 Triton 执行流程](https://zhuanlan.zhihu.com/p/712640431)
+
+[从零开始教你写一个MLIR Pass](https://zhuanlan.zhihu.com/p/708819963)
+
+[LeetGPU入门教程 (CUDA guide最佳实践)](https://zhuanlan.zhihu.com/p/1899956367734867434)
+
+
 ## 项目运行
 
 仅需要添加`TRITON_SPIRV_BACKEND=1`做为环境变量，即可使用本后端
@@ -30,21 +50,12 @@ build-opt/third_party/spirv/tool/spirv-opt third_party/spirv/test/add_kernel.tti
 
 ### 2025.5.17
 
-添加了空的SPIR-V后端，来获取`ttir`，文档见[Triton SPIR-V 后端开发：backend 初始化](https://www.cnblogs.com/BobHuang/p/18881029)。
+添加了空的SPIR-V后端，来获取`ttir`。
 
 
 ## 项目展望
 
-这个项目的源起在2023年5月，当时我在将我们自有的`gpgpu`芯片接入`Pytorch`，希望完成对大模型的训练，此时我了解到了`Triton`。在[自有AI芯片接入AI框架Pytorch的方案](https://www.cnblogs.com/BobHuang/p/17879241.html)中，我记录了我对`Triton`的看好。2024年6月随着清华智源的推动，`Triton`也在国内火了起来。我也心痒痒，然后写了[浅析 Triton 执行流程](https://www.cnblogs.com/BobHuang/p/18324040)，并在文章中提到了想做一个`SPIR-V`后端的玩具。今年我正式投入到了`Triton`的开发中，空闲之余我也进行了算子开发的学习，并写了[LeetGPU入门教程 (CUDA guide最佳实践)](https://www.cnblogs.com/BobHuang/p/18755313)。我慢慢意识到了`Triton`的伟大，而不仅是初次了解时的扩充生态以及快速交差的期望。**Pythonic is future!**，世界上会写Python的人越来越多，`AI`模型的发展可能会产生更多的算子，让算法的人能直接写算子带来的收益很可能抹平算子性能的差距。我用业余时间维护`triton-spirv`一方面是为了完成当年想做一个`toy`的心愿，另外也希望降低`Triton`的接入成本，为大家提供一个简明教程。我也衷心地希望`Triton`可以越来越强，既好写性能又过得去，愿`Python kernel mode`生态越来越强大，或许可以打破一部分`CUDA`的护城河。
-
-
-## 作者相关技术文章
-
-[浅析 Triton 执行流程](https://www.cnblogs.com/BobHuang/p/18324040)
-
-[从零开始教你写一个MLIR Pass](https://www.cnblogs.com/BobHuang/p/18249482)
-
-[LeetGPU入门教程 (CUDA guide最佳实践)](https://www.cnblogs.com/BobHuang/p/18755313)
+这个项目的源起在2023年5月，当时我在将我们自有的`gpgpu`芯片接入`Pytorch`，希望完成对大模型的训练，此时我了解到了`Triton`。在[自有AI芯片接入AI框架Pytorch的方案](https://www.cnblogs.com/BobHuang/p/17879241.html)中，我记录了我对`Triton`的看好。2024年6月随着清华智源的推动，`Triton`也在国内火了起来。我也心痒痒，然后写了[浅析 Triton 执行流程](https://zhuanlan.zhihu.com/p/712640431)，并在文章中提到了想做一个`SPIR-V`后端的玩具。今年我正式投入到了`Triton`的开发中，空闲之余我也进行了算子开发的学习，并写了[LeetGPU入门教程 (CUDA guide最佳实践)](https://zhuanlan.zhihu.com/p/1899956367734867434)。我慢慢意识到了`Triton`的伟大，而不仅是初次了解时的扩充生态以及快速交差的期望。**Pythonic is future!**，世界上会写Python的人越来越多，`AI`模型的发展可能会产生更多的算子，让算法的人能直接写算子带来的收益很可能抹平算子性能的差距。我用业余时间维护`triton-spirv`一方面是为了完成当年想做一个`toy`的心愿，另外也希望降低`Triton`的接入成本，为大家提供一个简明教程。我也衷心地希望`Triton`可以越来越强，既好写性能又过得去，愿`Python kernel mode`生态越来越强大，或许可以打破一部分`CUDA`的护城河。
 
 
 ## 项目编译和安装
