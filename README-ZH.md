@@ -17,7 +17,7 @@
 
 [Triton SPIR-V 后端开发：新增Pass](https://zhuanlan.zhihu.com/p/1914706253290120299)
 
-[Triton SPIR-V 后端开发：backend 初始化](https://zhuanlan.zhihu.com/p/1914706253290120299)
+[Triton SPIR-V 后端开发：backend 初始化](https://zhuanlan.zhihu.com/p/1907141200789602446)
 
 
 ## 作者相关技术文章
