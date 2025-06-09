@@ -9,6 +9,7 @@ CL_DEVICE_TYPE_GPU = 1 << 2
 CL_MEM_READ_ONLY = 1 << 2
 CL_MEM_WRITE_ONLY = 1 << 1
 CL_MEM_READ_WRITE = 1 << 0
+CL_MEM_COPY_HOST_PTR = 1 << 5
 CL_SUCCESS = 0
 
 # Define argument types for used OpenCL functions
@@ -52,18 +53,9 @@ b_np = np.random.rand(n).astype(np.float32)
 c_np = np.empty_like(a_np)
 
 # Create OpenCL buffers
-a_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_ONLY, a_np.nbytes, None, ctypes.byref(err)))
-b_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_ONLY, b_np.nbytes, None, ctypes.byref(err)))
-c_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_WRITE_ONLY, c_np.nbytes, None, ctypes.byref(err)))
-
-# Write input data to device
-cl.clEnqueueWriteBuffer = cl.clEnqueueWriteBuffer if hasattr(cl, 'clEnqueueWriteBuffer') else None
-if cl.clEnqueueWriteBuffer:
-    cl.clEnqueueWriteBuffer.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint,
-                                        ctypes.c_size_t, ctypes.c_size_t, ctypes.c_void_p,
-                                        ctypes.c_uint, ctypes.c_void_p, ctypes.c_void_p]
-    cl.clEnqueueWriteBuffer(queue, a_buf, True, 0, a_np.nbytes, a_np.ctypes.data_as(ctypes.c_void_p), 0, None, None)
-    cl.clEnqueueWriteBuffer(queue, b_buf, True, 0, b_np.nbytes, b_np.ctypes.data_as(ctypes.c_void_p), 0, None, None)
+a_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, a_np.nbytes, a_np.ctypes.data_as(ctypes.c_void_p), ctypes.byref(err)))
+b_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, b_np.nbytes, b_np.ctypes.data_as(ctypes.c_void_p), ctypes.byref(err)))
+c_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, c_np.nbytes, c_np.ctypes.data_as(ctypes.c_void_p), ctypes.byref(err)))
 
 # Define OpenCL kernel source
 program_src = b"""
@@ -129,7 +121,10 @@ if launch_kenrel != CL_SUCCESS:
 cl.clFinish(queue)
 
 # Read results from device
-cl.clEnqueueReadBuffer(queue, c_buf, True, 0, c_np.nbytes, c_np.ctypes.data_as(ctypes.c_void_p), 0, None, None)
+cl.clEnqueueReadBuffer(queue, a_buf, False, 0, a_np.nbytes, a_np.ctypes.data_as(ctypes.c_void_p), 0, None, None)
+cl.clEnqueueReadBuffer(queue, b_buf, False, 0, b_np.nbytes, b_np.ctypes.data_as(ctypes.c_void_p), 0, None, None)
+cl.clEnqueueReadBuffer(queue, c_buf, False, 0, c_np.nbytes, c_np.ctypes.data_as(ctypes.c_void_p), 0, None, None)
+cl.clFinish(queue)
 
 # Verify results
 print("Is result correct:", np.allclose(c_np, a_np + b_np))
