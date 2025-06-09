@@ -57,7 +57,6 @@ def launch(gridX, gridY, gridZ, tt_kernel, bound_args):
     # Create kernel and set arguments
     kernel = cl.clCreateKernel(program, tt_kernel.name.encode(), ctypes.byref(err))
     param_tys = [ty for (name, ty) in tt_kernel.src.signature.items()]
-    print(param_tys)
     buffers = {}
     for (idx, arg) in enumerate(bound_args):
         ty = param_tys[idx]
