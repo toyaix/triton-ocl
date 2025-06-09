@@ -31,7 +31,7 @@ cl.clEnqueueReadBuffer.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ui
                                    ctypes.c_uint, ctypes.c_void_p, ctypes.c_void_p]
 cl.clFinish.argtypes = [ctypes.c_void_p]
 
-def launch(gridX, gridY, gridZ, kernel_name, program_src, bound_args):
+def launch(gridX, gridY, gridZ, tt_kernel, bound_args):
     # Create platform, device, context, and command queue
     num_platforms = ctypes.c_uint()
     cl.clGetPlatformIDs(0, None, ctypes.byref(num_platforms))
@@ -45,8 +45,8 @@ def launch(gridX, gridY, gridZ, kernel_name, program_src, bound_args):
     err = ctypes.c_int()
     context = cl.clCreateContext(None, 1, devices, None, None, ctypes.byref(err))
     queue = cl.clCreateCommandQueue(context, devices[0], 0, ctypes.byref(err))
-    program_src_ptr = ctypes.c_char_p(program_src)
-    program_size = ctypes.c_size_t(len(program_src))
+    program_src_ptr = ctypes.c_char_p(tt_kernel.kernel)
+    program_size = ctypes.c_size_t(len(tt_kernel.kernel))
     program = cl.clCreateProgramWithSource(context, 1, ctypes.byref(program_src_ptr), ctypes.byref(program_size), ctypes.byref(err))
     build_program = cl.clBuildProgram(program, 1, devices, None, None, None)
     if build_program != CL_SUCCESS:
@@ -54,12 +54,12 @@ def launch(gridX, gridY, gridZ, kernel_name, program_src, bound_args):
         exit(0)
 
     # Create kernel and set arguments
-    kernel = cl.clCreateKernel(program, kernel_name.encode(), ctypes.byref(err))
+    kernel = cl.clCreateKernel(program, tt_kernel.name.encode(), ctypes.byref(err))
     args_lst = list(bound_args)
     a, b, c, n = args_lst[0], args_lst[1], args_lst[2], args_lst[3]
-    a_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, a.element_size() * a.numel(), ctypes.c_void_p(a.data_ptr()), ctypes.byref(err)))
-    b_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, b.element_size() * b.numel(), ctypes.c_void_p(b.data_ptr()), ctypes.byref(err)))
-    c_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_WRITE_ONLY, c.element_size() * c.numel(), None, ctypes.byref(err)))
+    a_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, a.element_size() * a.numel(), ctypes.c_void_p(a.data_ptr()), ctypes.byref(err)))
+    b_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, b.element_size() * b.numel(), ctypes.c_void_p(b.data_ptr()), ctypes.byref(err)))
+    c_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, c.element_size() * c.numel(), ctypes.c_void_p(c.data_ptr()), ctypes.byref(err)))
     cl.clSetKernelArg(kernel, 0, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(a_buf))
     cl.clSetKernelArg(kernel, 1, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(b_buf))
     cl.clSetKernelArg(kernel, 2, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(c_buf))
@@ -75,4 +75,7 @@ def launch(gridX, gridY, gridZ, kernel_name, program_src, bound_args):
     cl.clFinish(queue)
 
     # Read results from device
-    cl.clEnqueueReadBuffer(queue, c_buf, True, 0, c.element_size() * c.numel(), ctypes.c_void_p(c.data_ptr()), 0, None, None)
+    cl.clEnqueueReadBuffer(queue, a_buf, False, 0, a.element_size() * a.numel(), ctypes.c_void_p(a.data_ptr()), 0, None, None)
+    cl.clEnqueueReadBuffer(queue, b_buf, False, 0, b.element_size() * b.numel(), ctypes.c_void_p(b.data_ptr()), 0, None, None)
+    cl.clEnqueueReadBuffer(queue, c_buf, False, 0, c.element_size() * c.numel(), ctypes.c_void_p(c.data_ptr()), 0, None, None)
+    cl.clFinish(queue)

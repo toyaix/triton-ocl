@@ -631,7 +631,7 @@ class JITFunction(KernelInterface[T]):
             # launch kernel
             import os
             if os.getenv("TRITON_SPIRV_BACKEND", "0") == "1":
-                kernel.run(grid_0, grid_1, grid_2, kernel.name, kernel.kernel, bound_args.values())
+                kernel.run(grid_0, grid_1, grid_2, kernel, bound_args.values())
                 return kernel
             launch_metadata = kernel.launch_metadata(grid, stream, *bound_args.values())
             kernel.run(grid_0, grid_1, grid_2, stream, kernel.function, kernel.packed_metadata, launch_metadata,
