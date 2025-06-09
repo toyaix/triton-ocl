@@ -10,6 +10,7 @@ CL_MEM_READ_ONLY = 1 << 2
 CL_MEM_WRITE_ONLY = 1 << 1
 CL_MEM_READ_WRITE = 1 << 0
 CL_MEM_COPY_HOST_PTR = 1 << 5
+CL_MEM_KERNEL = CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR
 CL_SUCCESS = 0
 
 # Define argument types for used OpenCL functions
@@ -55,16 +56,23 @@ def launch(gridX, gridY, gridZ, tt_kernel, bound_args):
 
     # Create kernel and set arguments
     kernel = cl.clCreateKernel(program, tt_kernel.name.encode(), ctypes.byref(err))
-    args_lst = list(bound_args)
-    a, b, c, n = args_lst[0], args_lst[1], args_lst[2], args_lst[3]
-    a_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, a.element_size() * a.numel(), ctypes.c_void_p(a.data_ptr()), ctypes.byref(err)))
-    b_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, b.element_size() * b.numel(), ctypes.c_void_p(b.data_ptr()), ctypes.byref(err)))
-    c_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, c.element_size() * c.numel(), ctypes.c_void_p(c.data_ptr()), ctypes.byref(err)))
-    cl.clSetKernelArg(kernel, 0, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(a_buf))
-    cl.clSetKernelArg(kernel, 1, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(b_buf))
-    cl.clSetKernelArg(kernel, 2, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(c_buf))
-    int_value = ctypes.c_int(n)
-    cl.clSetKernelArg(kernel, 3, ctypes.sizeof(int_value), ctypes.byref(int_value))
+    param_tys = [ty for (name, ty) in tt_kernel.src.signature.items()]
+    print(param_tys)
+    buffers = {}
+    for (idx, arg) in enumerate(bound_args):
+        ty = param_tys[idx]
+        if ty[0] == '*':
+            nbytes = arg.element_size() * arg.numel()
+            cl_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_KERNEL, nbytes, ctypes.c_void_p(arg.data_ptr()), ctypes.byref(err)))
+            cl.clSetKernelArg(kernel, idx, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(cl_buf))
+            buffers[idx] = cl_buf
+        elif ty == "constexpr":
+            pass
+        elif ty == 'i32':
+            int_value = ctypes.c_int(arg)
+            cl.clSetKernelArg(kernel, idx, ctypes.sizeof(int_value), ctypes.byref(int_value))
+        else:
+            raise RuntimeError("Unsuport this kernel type, please add!")
 
     # Launch kernel
     global_size = (ctypes.c_size_t * 3)(gridX, gridY, gridZ)
@@ -75,7 +83,8 @@ def launch(gridX, gridY, gridZ, tt_kernel, bound_args):
     cl.clFinish(queue)
 
     # Read results from device
-    cl.clEnqueueReadBuffer(queue, a_buf, False, 0, a.element_size() * a.numel(), ctypes.c_void_p(a.data_ptr()), 0, None, None)
-    cl.clEnqueueReadBuffer(queue, b_buf, False, 0, b.element_size() * b.numel(), ctypes.c_void_p(b.data_ptr()), 0, None, None)
-    cl.clEnqueueReadBuffer(queue, c_buf, False, 0, c.element_size() * c.numel(), ctypes.c_void_p(c.data_ptr()), 0, None, None)
+    for (idx, arg) in enumerate(bound_args):
+        if param_tys[idx][0] == '*':
+            nbytes = arg.element_size() * arg.numel()
+            cl.clEnqueueReadBuffer(queue, buffers[idx], False, 0, nbytes, ctypes.c_void_p(arg.data_ptr()), 0, None, None)
     cl.clFinish(queue)
