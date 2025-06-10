@@ -10,9 +10,6 @@ def matmul_kernel(
     stride_cm, stride_cn,
     BLOCK_SIZE_M: tl.constexpr, BLOCK_SIZE_N: tl.constexpr
 ):
-    a_ptr = a_ptr.to(tl.pointer_type(tl.float32))
-    b_ptr = b_ptr.to(tl.pointer_type(tl.float32))
-    c_ptr = c_ptr.to(tl.pointer_type(tl.float32))
     pid_n = tl.program_id(axis=0)
     pid_m = tl.program_id(axis=1)
 
@@ -67,7 +64,11 @@ def matmul(a, b):
 
 import torch
 
-DEVICE = "cpu"
+DEVICE = "cuda"
+
+import os
+if os.getenv("TRITON_SPIRV_BACKEND", "0") == "1":
+    DEVICE = "cpu"
 
 torch.manual_seed(0)
 a = torch.randn((128, 256), device=DEVICE, dtype=torch.float32)

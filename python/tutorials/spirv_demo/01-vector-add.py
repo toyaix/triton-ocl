@@ -23,8 +23,6 @@ import torch
 import triton
 import triton.language as tl
 
-DEVICE = "cpu"
-
 @triton.jit
 def add_kernel(x_ptr,  # *Pointer* to first input vector.
                y_ptr,  # *Pointer* to second input vector.
@@ -78,6 +76,12 @@ def add(x: torch.Tensor, y: torch.Tensor):
 
 # %%
 # We can now use the above function to compute the element-wise sum of two `torch.tensor` objects and test its correctness:
+
+DEVICE = "cuda"
+
+import os
+if os.getenv("TRITON_SPIRV_BACKEND", "0") == "1":
+    DEVICE = "cpu"
 
 torch.manual_seed(0)
 size = 98432
