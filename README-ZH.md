@@ -132,7 +132,7 @@ pip install -e . --no-build-isolation
 # GLIBCXX_3.4.30' not found解决
 conda install -c conda-forge libstdcxx-ng=12
 
-TRITON_SPIRV_BACKEND=1 python python/tutorials/spirv_demo/01-vector-add.py
+TRITON_SPIRV_BACKEND=1 TRITON_CACHE_DIR=$PWD/.cache python python/tutorials/spirv_demo/01-vector-add.py
 # 可能会缺少 ZLIB::ZLIB，target "LLVMSupport" contains，需要安装
 # sudo apt install zlib1g zlib1g-dev
 ```
