@@ -25,17 +25,19 @@ struct LinalgToAffineLoops
 
   void runOnOperation() override {
     auto moduleOp = getOperation();
-    SmallVector<linalg::LinalgOp> genericOps;
+    SmallVector<linalg::LinalgOp> linalgOps;
     moduleOp.walk(
-        [&](linalg::GenericOp genericOp) { genericOps.push_back(genericOp); });
+        [&](linalg::GenericOp genericOp) { linalgOps.push_back(genericOp); });
+    moduleOp.walk(
+        [&](linalg::FillOp fillOp) { linalgOps.push_back(fillOp); });
     PatternRewriter rewriter(&getContext());
-    for (auto genericOp : genericOps) {
-      rewriter.setInsertionPoint(genericOp);
-      if (failed(linalg::linalgOpToAffineLoops(rewriter, genericOp))) {
+    for (auto linalgOp : linalgOps) {
+      rewriter.setInsertionPoint(linalgOp);
+      if (failed(linalg::linalgOpToAffineLoops(rewriter, linalgOp))) {
         llvm::errs() << "Failed to lower to affine loops.\n";
         return;
       }
-      rewriter.eraseOp(genericOp);
+      rewriter.eraseOp(linalgOp);
     }
   }
 };
