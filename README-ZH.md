@@ -40,7 +40,7 @@ TRITON_SPIRV_BACKEND=1 python python/tutorials/spirv_demo/01-vector-add.py
 如已编译`spirv-opt`，可以运行下面的命令来执行单个/多个 Pass
 
 ```bash
-build-opt/third_party/spirv/tool/spirv-opt third_party/spirv/test/add_kernel.ttir  --triton-to-linalg
+build-opt/third_party/spirv/tool/spirv-opt/spirv-opt third_party/spirv/test/add_kernel.ttir  --triton-to-linalg
 ```
 
 ## 里程碑
