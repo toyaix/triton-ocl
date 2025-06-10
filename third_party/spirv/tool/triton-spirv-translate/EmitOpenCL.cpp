@@ -69,6 +69,14 @@ void ModuleEmitter::emitCall(func::CallOp op) {
 
 /// SCF statement emitters.
 void ModuleEmitter::emitScfFor(scf::ForOp op) {
+  for (auto [init, arg] : llvm::zip(op.getInitArgs(), op.getRegionIterArgs())) {
+    indent();
+    emitValue(arg);
+    os << " = ";
+    emitValue(init);
+    os << ";";
+    emitInfoAndNewLine(op);
+  }
   indent() << "for (";
   auto iterVar = op.getInductionVar();
 
@@ -97,6 +105,16 @@ void ModuleEmitter::emitScfFor(scf::ForOp op) {
   reduceIndent();
 
   indent() << "}\n";
+
+  for (auto [arg, result] :
+       llvm::zip(op.getRegionIterArgs(), op.getResults())) {
+    indent();
+    emitValue(result);
+    os << " = ";
+    emitValue(arg);
+    os << ";";
+    emitInfoAndNewLine(op);
+  }
 }
 
 void ModuleEmitter::emitScfIf(scf::IfOp op) {
@@ -150,6 +168,18 @@ void ModuleEmitter::emitScfYield(scf::YieldOp op) {
       emitInfoAndNewLine(op);
       emitNestedLoopFooter(rank);
     }
+  } else if (auto forOp = dyn_cast<scf::ForOp>(op->getParentOp())) {
+    for (auto [arg, yielded] :
+         llvm::zip(forOp.getRegionIterArgs(), forOp.getYieldedValues())) {
+      indent();
+      emitValue(arg);
+      os << " = ";
+      emitValue(yielded);
+      os << ";";
+      emitInfoAndNewLine(op);
+    }
+  } else {
+    llvm_unreachable("Unsupported this scf::YieldOp op");
   }
 }
 
@@ -741,20 +771,20 @@ void ModuleEmitter::emitFunction(func::FuncOp func) {
   }
 
   // Emit results.
-  auto funcReturn = cast<func::ReturnOp>(func.front().getTerminator());
-  for (auto result : funcReturn.getOperands()) {
-    os << ",\n";
-    indent();
+  // auto funcReturn = cast<func::ReturnOp>(func.front().getTerminator());
+  // for (auto result : funcReturn.getOperands()) {
+  //   os << ",\n";
+  //   indent();
     // TODO: a known bug, cannot return a value twice, e.g. return %0, %0 :
     // index, index. However, typically this should not happen.
-    if (mlir::isa<MemRefType>(result.getType()))
-      emitArrayDecl(result);
-    else
+    // if (mlir::isa<MemRefType>(result.getType()))
+    //   emitArrayDecl(result);
+    // else
       // In Vivado HLS, pointer indicates the value is an output.
-      emitValue(result, /*rank=*/0, /*isPtr=*/true);
+  //     emitValue(result, /*rank=*/0, /*isPtr=*/true);
 
-    portList.push_back(result);
-  }
+  //   portList.push_back(result);
+  // }
 
   reduceIndent();
   os << "\n) {";
