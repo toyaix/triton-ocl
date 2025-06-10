@@ -15,6 +15,8 @@
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/Linalg/Transforms/BufferizableOpInterfaceImpl.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/Dialect/SCF/Transforms/BufferizableOpInterfaceImpl.h"
 #include "mlir/Dialect/Tensor/Transforms/BufferizableOpInterfaceImpl.h"
 #include "spirv/include/Conversion/AffineToLLVMSPV/Passes.h"
 #include "spirv/include/Conversion/LinalgToAffineLoops/Passes.h"
@@ -56,6 +58,7 @@ void init_triton_spirv(py::module &&m) {
     mlir::arith::registerBufferizableOpInterfaceExternalModels(registry);
     mlir::linalg::registerBufferizableOpInterfaceExternalModels(registry);
     mlir::tensor::registerBufferizableOpInterfaceExternalModels(registry);
+    mlir::scf::registerBufferizableOpInterfaceExternalModels(registry);
     context.appendDialectRegistry(registry);
     context.loadAllAvailableDialects();
   });
