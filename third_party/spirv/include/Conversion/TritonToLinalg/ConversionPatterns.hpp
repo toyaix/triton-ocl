@@ -403,6 +403,32 @@ struct StoreConverter : public OpConversionPattern<triton::StoreOp> {
   }
 };
 
+struct LoopConverter : public OpConversionPattern<scf::ForOp> {
+  using OpConversionPattern<scf::ForOp>::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(scf::ForOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    llvm::SmallDenseMap<Value, PtrState> knownPtrs;
+    PtrAnalysis::IndexMapSet
+        levelToBlockArgIndex; // level -> set of block arg index to be replaced
+
+    PtrAnalysis::rewriteForOp(op, rewriter, levelToBlockArgIndex, 0, knownPtrs);
+    return success();
+  }
+};
+
+struct YieldConverter : public OpConversionPattern<scf::YieldOp> {
+  using OpConversionPattern<scf::YieldOp>::OpConversionPattern;
+
+  LogicalResult
+  matchAndRewrite(scf::YieldOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    rewriter.replaceOpWithNewOp<scf::YieldOp>(op, adaptor.getOperands());
+    return success();
+  }
+};
+
 // Remove all Meta ops except for AddPtr which is handled by AddPtrConverter.
 // Use benefit == 10 to ensure that this pattern always takes precedence over
 // other patterns.
@@ -433,6 +459,10 @@ public:
   }
 };
 
+//-----------------------------
+// End of monolithic only
+//-----------------------------
+
 struct SplatConverter : public OpConversionPattern<triton::SplatOp> {
   using OpConversionPattern<triton::SplatOp>::OpConversionPattern;
 
@@ -456,6 +486,96 @@ struct SplatConverter : public OpConversionPattern<triton::SplatOp> {
   }
 };
 
+struct BroadcastConverter : public OpConversionPattern<triton::BroadcastOp> {
+private:
+  using OpConversionPattern<triton::BroadcastOp>::OpConversionPattern;
+
+  SmallVector<int64_t> getBroadcastDims(RankedTensorType src,
+                                        RankedTensorType dst) const {
+    SmallVector<int64_t> broadcastDims;
+    auto srcShape = src.getShape();
+    auto dstShape = dst.getShape();
+
+    for (size_t i = 0; i < srcShape.size(); i++) {
+      if (dstShape[i] != srcShape[i]) {
+        assert(srcShape[i] == 1);
+        broadcastDims.push_back(i);
+      }
+    }
+    assert(!broadcastDims.empty() && "cannot identify broadcast dimension");
+    return broadcastDims;
+  }
+
+  // Broadcasts input tensor based on TosaToLinalg's broadcastToShape
+  AffineMap getBroadcastAffineMap(MLIRContext *context,
+                                  ArrayRef<int64_t> inputShape,
+                                  ArrayRef<int64_t> broadcastToShape) const {
+
+    assert(broadcastToShape.size() >= inputShape.size());
+
+    // Create affine map and shapes for tensor initialization.
+    SmallVector<AffineExpr> outExpr;
+
+    size_t diff = broadcastToShape.size() - inputShape.size();
+    for (size_t i = 0; i < broadcastToShape.size(); i++) {
+      if (i < diff) {
+        continue;
+      }
+      size_t j = i - diff;
+      if (inputShape[j] == 1) {
+        // Broadcast singleton dimension
+        outExpr.push_back(mlir::getAffineConstantExpr(0, context));
+        continue;
+      }
+      // Non-broadcast case
+      outExpr.push_back(mlir::getAffineDimExpr(i, context));
+    }
+    return AffineMap::get(broadcastToShape.size(), 0, outExpr, context);
+  }
+
+public:
+  LogicalResult
+  matchAndRewrite(triton::BroadcastOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    auto loc = op.getLoc();
+
+    assert(op->getNumResults() == 1 && "code assumes single result!");
+    RankedTensorType sourceType =
+        cast<RankedTensorType>(adaptor.getSrc().getType());
+    RankedTensorType resultType = cast<RankedTensorType>(op.getType());
+    auto elementType = resultType.getElementType();
+    size_t resultRank = resultType.getRank();
+
+    SmallVector<AffineMap> indexingMaps;
+    indexingMaps.reserve(op->getNumOperands() + op->getNumResults());
+
+    indexingMaps.push_back(getBroadcastAffineMap(
+        op->getContext(), sourceType.getShape(), resultType.getShape()));
+    indexingMaps.append(op->getNumResults(),
+                        rewriter.getMultiDimIdentityMap(resultRank));
+
+    assert(op->getNumResults() == 1 && "code assumes single result!");
+    auto init = rewriter.create<tensor::EmptyOp>(loc, resultType.getShape(),
+                                                 elementType);
+
+    auto linalgOp = rewriter.create<linalg::GenericOp>(
+        loc, op->getResultTypes(), ValueRange{adaptor.getSrc()},
+        ValueRange{init}, indexingMaps, getNParallelLoopsAttrs(resultRank),
+        [&](OpBuilder &nestedBuilder, Location nestedLoc,
+            ValueRange blockArgs) {
+          Value opResult = blockArgs[0];
+          nestedBuilder.create<linalg::YieldOp>(loc, opResult);
+        });
+
+    linalgOp->setAttr("broadcastDims",
+                      rewriter.getDenseI64ArrayAttr(
+                          getBroadcastDims(sourceType, resultType)));
+
+    rewriter.replaceOp(op, linalgOp->getResults());
+    return success();
+  }
+};
+
 struct GetProgramIDConverter
     : public OpConversionPattern<triton::GetProgramIdOp> {
   using OpConversionPattern<triton::GetProgramIdOp>::OpConversionPattern;
@@ -475,6 +595,28 @@ public:
     auto globalIdOp = rewriter.create<::mlir::gpu::GlobalIdOp>(loc, dims[axis]);
     auto id = rewriter.create<arith::IndexCastOp>(loc, i32_ty, globalIdOp);
     rewriter.replaceOp(op, id);
+    return success();
+  }
+};
+
+struct DenseConstantConverter : public OpConversionPattern<arith::ConstantOp> {
+  using OpConversionPattern<arith::ConstantOp>::OpConversionPattern;
+  LogicalResult
+  matchAndRewrite(arith::ConstantOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    auto attr = cast<DenseElementsAttr>(op.getValue());
+    auto loc = op.getLoc();
+
+    auto splatConst = arith::ConstantOp::materialize(
+        rewriter, attr.getSplatValue<Attribute>(), attr.getElementType(), loc);
+
+    auto init = rewriter.create<tensor::EmptyOp>(
+        loc, cast<RankedTensorType>(op.getResult().getType()).getShape(),
+        attr.getElementType());
+
+    rewriter.replaceOpWithNewOp<linalg::FillOp>(op, ValueRange{splatConst},
+                                                ValueRange{init});
+
     return success();
   }
 };

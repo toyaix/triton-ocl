@@ -28,8 +28,12 @@ void populateTritonToLinalgConversionPatterns(TypeConverter &typeConverter,
   patterns.add<StoreConverter>(patterns.getContext());
   patterns.add<LegacyAddPtrConverter>(patterns.getContext());
   patterns.add<GetProgramIDConverter>(patterns.getContext());
+  patterns.add<YieldConverter>(patterns.getContext());
   patterns.add<LoadConverter>(patterns.getContext());
+  patterns.add<LoopConverter>(patterns.getContext());
+  patterns.add<BroadcastConverter>(patterns.getContext());
   patterns.add<SplatConverter>(patterns.getContext());
+  patterns.add<DenseConstantConverter>(patterns.getContext());
   linalg::populateElementwiseToLinalgConversionPatterns(patterns);
 }
 
@@ -104,6 +108,19 @@ struct TritonToLinalg
         }
       }
       return true;
+    });
+
+    target.addDynamicallyLegalOp<scf::ForOp, scf::YieldOp>([](Operation *op) {
+      return llvm::all_of(op->getOperandTypes(), [](Type t) {
+        if (isa<triton::PointerType>(t)) {
+          return false;
+        }
+        if (auto shapedType = dyn_cast<ShapedType>(t)) {
+          return shapedType.getElementType().isIntOrFloat();
+        }
+        assert(t.isIntOrIndexOrFloat());
+        return true;
+      });
     });
 
     target.addDynamicallyLegalDialect<arith::ArithDialect, math::MathDialect>(
