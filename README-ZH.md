@@ -24,6 +24,8 @@
 
 [浅析 Triton 执行流程](https://zhuanlan.zhihu.com/p/712640431)
 
+[Triton 社区首 PR：Bug 修复实录](https://zhuanlan.zhihu.com/p/1917136776885174369)
+
 [从零开始教你写一个MLIR Pass](https://zhuanlan.zhihu.com/p/708819963)
 
 [LeetGPU入门教程 (CUDA guide最佳实践)](https://zhuanlan.zhihu.com/p/1899956367734867434)
