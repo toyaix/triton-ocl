@@ -804,8 +804,11 @@ void ModuleEmitter::emitArrayDecl(Value array) {
 
   if (arrayType.hasStaticShape()) {
     emitValue(array);
-    for (auto &shape : arrayType.getShape())
-      os << "[" << shape << "]";
+    for (auto &shape : arrayType.getShape()) {
+      if (shape != 1) {
+        os << "[" << shape << "]";
+      }
+    }
   } else
     emitValue(array, /*rank=*/0, /*isPtr=*/true);
 }

@@ -589,7 +589,11 @@ void ModuleEmitter::emitMemCpyValue(Value val) {
   } else if (auto allocOp = val.getDefiningOp<memref::AllocOp>()) {
     emitValue(val);
     os << "[i]";
+  } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
+    emitValue(val);
+    os << "[i]";
   } else {
+    val.dump();
     llvm_unreachable("mecpy unsupported subview targetOp");
   }
 }
@@ -597,37 +601,55 @@ void ModuleEmitter::emitMemCpyValue(Value val) {
 void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
   auto sourceSubView = getSubviewOp(op.getSource());
   auto targetSubView = getSubviewOp(op.getTarget());
-  assert(sourceSubView && targetSubView && "need copy subview");
-  assert(checkOneDimMemref(sourceSubView) && checkOneDimMemref(targetSubView) &&
-         "memcpy not support over 1D");
-  assert(checkSubViewOffsetAndStride(sourceSubView) &&
-         "source subview not support");
-  assert(checkSubViewOffsetAndStride(targetSubView) &&
-         "target subview not support");
+  bool isCopySubView = false;
+  if (sourceSubView || targetSubView) {
+    assert(checkOneDimMemref(sourceSubView) && checkOneDimMemref(targetSubView) &&
+          "memcpy not support over 1D");
+    assert(checkSubViewOffsetAndStride(sourceSubView) &&
+          "source subview not support");
+    assert(checkSubViewOffsetAndStride(targetSubView) &&
+          "target subview not support");
+    isCopySubView = true;
+  }
+
 
   indent() << "for (";
   // Emit lower bound.
   os << "int i = 0; ";
   // Emit upper bound.
   os << "i < ";
-  OpFoldResult upperBound = targetSubView.getMixedSizes()[0];
-  if (auto intAttr = getConstantIntValue(upperBound)) {
-    os << intAttr;
+  if (isCopySubView) {
+    OpFoldResult upperBound = targetSubView.getMixedSizes()[0];
+    if (auto intAttr = getConstantIntValue(upperBound)) {
+      os << intAttr;
+    } else {
+      emitValue(mlir::dyn_cast<Value>(upperBound));
+    }
   } else {
-    emitValue(mlir::dyn_cast<Value>(upperBound));
+    auto memref = cast<mlir::MemRefType>(op.getSource().getType());
+    os << memref.getNumElements();
   }
+
   os << "; i += 1) {\n";
   addIndent();
   indent();
-  emitMemCpyValue(targetSubView.getSource());
-  os << " = ";
-  emitMemCpyValue(sourceSubView.getSource());
+  if (isCopySubView) {
+    emitMemCpyValue(targetSubView.getSource());
+    os << " = ";
+    emitMemCpyValue(sourceSubView.getSource());
+  } else {
+    emitMemCpyValue(op.getTarget());
+    os << " = ";
+    emitMemCpyValue(op.getSource());
+  }
   os << ";\n";
   reduceIndent();
   indent() << "}";
   emitInfoAndNewLine(op);
-  if (mlir::isa<memref::AllocOp>(targetSubView.getSource().getDefiningOp())) {
-    indent() << "barrier(CLK_LOCAL_MEM_FENCE);\n";
+  if (isCopySubView) {
+    if (mlir::isa<memref::AllocOp>(targetSubView.getSource().getDefiningOp())) {
+      indent() << "barrier(CLK_LOCAL_MEM_FENCE);\n";
+    }
   }
 }
 
