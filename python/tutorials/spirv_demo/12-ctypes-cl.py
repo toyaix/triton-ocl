@@ -6,8 +6,6 @@ cl = ctypes.CDLL("libOpenCL.so")  # Use "OpenCL.dll" on Windows
 
 # Constant definitions
 CL_DEVICE_TYPE_GPU = 1 << 2
-CL_MEM_READ_ONLY = 1 << 2
-CL_MEM_WRITE_ONLY = 1 << 1
 CL_MEM_READ_WRITE = 1 << 0
 CL_MEM_COPY_HOST_PTR = 1 << 5
 CL_SUCCESS = 0
@@ -72,15 +70,11 @@ __kernel void add_kernel(
   int var_11 = min(var_9, var_3);	// L13
   int var_12 = max(var_11, var_6);	// L14
   int var_13 = var_12 - var_6;	// L15
-  for (int i = 0; i < var_13; i += 1) {
-    var_8[i] = var_0[i + var_6];
-  }	// L18
-  barrier(CLK_LOCAL_MEM_FENCE);
+  event_t copy_event = async_work_group_copy(var_8, var_0 + var_6, var_13, 0);
+  wait_group_events(1, &copy_event);
   __local float var_14[1024];	// L20
-  for (int i = 0; i < var_13; i += 1) {
-    var_14[i] = var_1[i + var_6];
-  }	// L23
-  barrier(CLK_LOCAL_MEM_FENCE);
+  event_t copy_event1 = async_work_group_copy(var_14, var_1 + var_6, var_13, 0);
+  wait_group_events(1, &copy_event1);
   for (int var_15 = 0; var_15 < 1024; var_15 += 1) {	// L24
     float var_16 = var_8[var_15];	// L25
     float var_17 = var_14[var_15];	// L26
