@@ -583,15 +583,12 @@ bool checkStride(Value val) {
 void ModuleEmitter::emitMemCpyValue(Value val) {
   if (auto castOp = val.getDefiningOp<memref::ReinterpretCastOp>()) {
     emitValue(castOp.getSource());
-    os << "[i + ";
+    os << " + ";
     emitValue(mlir::dyn_cast<Value>(castOp.getMixedOffsets()[0]));
-    os << "]";
   } else if (auto allocOp = val.getDefiningOp<memref::AllocOp>()) {
     emitValue(val);
-    os << "[i]";
   } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
     emitValue(val);
-    os << "[i]";
   } else {
     val.dump();
     llvm_unreachable("mecpy unsupported subview targetOp");
@@ -612,45 +609,23 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
     isCopySubView = true;
   }
 
-
-  indent() << "for (";
-  // Emit lower bound.
-  os << "int i = 0; ";
-  // Emit upper bound.
-  os << "i < ";
+  indent() << "ev = async_work_group_copy(";
   if (isCopySubView) {
+    emitMemCpyValue(targetSubView.getSource());
+    os << ", ";
+    emitMemCpyValue(sourceSubView.getSource());
+    os << " , ";
     OpFoldResult upperBound = targetSubView.getMixedSizes()[0];
     if (auto intAttr = getConstantIntValue(upperBound)) {
       os << intAttr;
     } else {
       emitValue(mlir::dyn_cast<Value>(upperBound));
     }
-  } else {
-    auto memref = cast<mlir::MemRefType>(op.getSource().getType());
-    os << memref.getNumElements();
+    os << ", 0);";
   }
 
-  os << "; i += 1) {\n";
-  addIndent();
-  indent();
-  if (isCopySubView) {
-    emitMemCpyValue(targetSubView.getSource());
-    os << " = ";
-    emitMemCpyValue(sourceSubView.getSource());
-  } else {
-    emitMemCpyValue(op.getTarget());
-    os << " = ";
-    emitMemCpyValue(op.getSource());
-  }
-  os << ";\n";
-  reduceIndent();
-  indent() << "}";
   emitInfoAndNewLine(op);
-  if (isCopySubView) {
-    if (mlir::isa<memref::AllocOp>(targetSubView.getSource().getDefiningOp())) {
-      indent() << "barrier(CLK_LOCAL_MEM_FENCE);\n";
-    }
-  }
+  indent() << "wait_group_events(1, &ev);\n";
 }
 
 template <typename OpType> void ModuleEmitter::emitReshape(OpType op) {
@@ -814,6 +789,8 @@ void ModuleEmitter::emitFunction(func::FuncOp func) {
 
   // Emit function body.
   addIndent();
+  // Emit event
+  indent() << "event_t ev = 0;\n";
 
   emitBlock(func.front());
   reduceIndent();
