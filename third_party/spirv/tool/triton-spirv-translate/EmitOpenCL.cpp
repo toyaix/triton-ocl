@@ -588,19 +588,26 @@ bool is2D(MemRefType memref) { return memref.getRank() == 2; }
 
 bool lessOrEqual2D(MemRefType memref) { return memref.getRank() <= 2; }
 
+bool isSimilar1D(MemRefType memref) {
+  for (int i = 0; i < memref.getRank() - 1; i++)
+    if (memref.getShape()[i] != 1)
+      return false;
+  return true;
+}
+
 void ModuleEmitter::emitMemCpyValue(Value val) {
   auto memrefType = mlir::cast<MemRefType>(val.getType());
   if (auto castOp = val.getDefiningOp<memref::ReinterpretCastOp>()) {
     emitValue(castOp.getSource());
     os << " + ";
     emitOpFoldResult(castOp.getMixedOffsets()[0]);
-    if (is2D(memrefType)) {
+    if (!isSimilar1D(memrefType)) {
       os << " + i * ";
       emitOpFoldResult(castOp.getMixedStrides()[0]);
     }
   } else if (auto allocOp = val.getDefiningOp<memref::AllocOp>()) {
     emitValue(val);
-    if (is2D(memrefType)) {
+    if (!isSimilar1D(memrefType)) {
       os << " + i";
     }
   } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
@@ -673,9 +680,9 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
       indent() << "}";
     }
   } else {
-    if (is1D(targetMemref)) {
+    if (isSimilar1D(targetMemref)) {
       emitAsyncCopyWithConstant(op.getTarget(), op.getSource(),
-                                 targetMemref.getNumElements());
+                                targetMemref.getNumElements());
     } else {
       llvm_unreachable("mecpy unsupported memref::CopyOp");
     }
