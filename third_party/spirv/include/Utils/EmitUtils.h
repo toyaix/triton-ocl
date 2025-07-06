@@ -443,6 +443,10 @@ public:
   void emitLoad(memref::LoadOp op);
   void emitStore(memref::StoreOp op);
   void emitMemCpyValue(Value val);
+  void emitOpFoldResult(OpFoldResult opFoldResult);
+  void emitAsyncCopy(Value target, Value source);
+  void emitAsyncCopyWithOpFoldResult(Value target, Value source, OpFoldResult num);
+  void emitAsyncCopyWithConstant(Value target, Value source, int num);
   void emitMemCpy(memref::CopyOp op);
   template <typename OpType> void emitReshape(OpType op);
 

@@ -582,21 +582,6 @@ bool checkSubViewOffsetAndStride(memref::SubViewOp op) {
   return true;
 }
 
-void ModuleEmitter::emitMemCpyValue(Value val) {
-  if (auto castOp = val.getDefiningOp<memref::ReinterpretCastOp>()) {
-    emitValue(castOp.getSource());
-    os << " + ";
-    emitValue(mlir::dyn_cast<Value>(castOp.getMixedOffsets()[0]));
-  } else if (auto allocOp = val.getDefiningOp<memref::AllocOp>()) {
-    emitValue(val);
-  } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
-    emitValue(val);
-  } else {
-    val.dump();
-    llvm_unreachable("mecpy unsupported subview targetOp");
-  }
-}
-
 bool isSimilar1D(MemRefType memref) {
   int numUnitDims = 0;
   for (auto shape : memref.getShape()) {
@@ -605,6 +590,62 @@ bool isSimilar1D(MemRefType memref) {
     }
   }
   return memref.getRank() == 1 || numUnitDims == memref.getRank() - 1;
+}
+
+bool has2D(MemRefType memref) {
+  return !isSimilar1D(memref) && memref.getRank() == 2;
+}
+
+void ModuleEmitter::emitMemCpyValue(Value val) {
+  auto memrefType = mlir::cast<MemRefType>(val.getType());
+  if (auto castOp = val.getDefiningOp<memref::ReinterpretCastOp>()) {
+    emitValue(castOp.getSource());
+    os << " + ";
+    emitOpFoldResult(castOp.getMixedOffsets()[0]);
+    if (has2D(memrefType)) {
+      os << " + i * ";
+      emitOpFoldResult(castOp.getMixedStrides()[0]);
+    }
+  } else if (auto allocOp = val.getDefiningOp<memref::AllocOp>()) {
+    emitValue(val);
+    if (has2D(memrefType)) {
+      os << " + i";
+    }
+  } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
+    emitValue(val);
+  } else {
+    val.dump();
+    llvm_unreachable("mecpy unsupported subview targetOp");
+  }
+}
+
+void ModuleEmitter::emitOpFoldResult(OpFoldResult opFoldResult) {
+  if (auto intAttr = getConstantIntValue(opFoldResult)) {
+    os << intAttr;
+  } else {
+    emitValue(mlir::dyn_cast<Value>(opFoldResult));
+  }
+}
+
+void ModuleEmitter::emitAsyncCopy(Value target, Value source) {
+  indent() << "ev = async_work_group_copy(";
+  emitMemCpyValue(target);
+  os << ", ";
+  emitMemCpyValue(source);
+  os << ", ";
+}
+
+void ModuleEmitter::emitAsyncCopyWithOpFoldResult(Value target, Value source,
+                                                  OpFoldResult num) {
+  emitAsyncCopy(target, source);
+  emitOpFoldResult(num);
+  os << ", 0);";
+}
+
+void ModuleEmitter::emitAsyncCopyWithConstant(Value target, Value source,
+                                              int num) {
+  emitAsyncCopy(target, source);
+  os << num << ", 0);";
 }
 
 void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
@@ -619,28 +660,31 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
     isCopySubView = true;
   }
 
-  indent() << "ev = async_work_group_copy(";
-  auto targetMemref = mlir::dyn_cast<mlir::MemRefType>(op.getTarget().getType());
+  auto targetMemref =
+      mlir::dyn_cast<mlir::MemRefType>(op.getTarget().getType());
   if (isCopySubView) {
-    emitMemCpyValue(targetSubView.getSource());
-    os << ", ";
-    emitMemCpyValue(sourceSubView.getSource());
-    os << " , ";
-    OpFoldResult upperBound = targetSubView.getMixedSizes()[0];
-    if (auto intAttr = getConstantIntValue(upperBound)) {
-      os << intAttr;
+    if (targetMemref.getRank() == 1) {
+      emitAsyncCopyWithOpFoldResult(targetSubView.getSource(),
+                                    sourceSubView.getSource(),
+                                    targetSubView.getMixedSizes()[0]);
+    } else if (targetMemref.getRank() == 2) {
+      indent() << "for (int i = 0; i < ";
+      emitOpFoldResult(targetSubView.getMixedSizes()[0]);
+      os << "; i += 1) {\n";
+      addIndent();
+      emitAsyncCopyWithOpFoldResult(targetSubView.getSource(),
+                                    sourceSubView.getSource(),
+                                    targetSubView.getMixedSizes()[1]);
+      os << "\n";
+      reduceIndent();
+      indent() << "}";
     } else {
-      emitValue(mlir::dyn_cast<Value>(upperBound));
+      llvm_unreachable("mecpy unsupported subview memref::CopyOp");
     }
-    os << ", 0);";
   } else {
     if (isSimilar1D(targetMemref)) {
-      emitMemCpyValue(op.getTarget());
-      os << ", ";
-      emitMemCpyValue(op.getSource());
-      os << ", ";
-      os << targetMemref.getNumElements();
-      os << ", 0);";
+      emitAsyncCopyWithConstant(op.getTarget(), op.getSource(),
+                                targetMemref.getNumElements());
     } else {
       llvm_unreachable("mecpy unsupported memref::CopyOp");
     }
