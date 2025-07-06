@@ -620,6 +620,7 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
   }
 
   indent() << "ev = async_work_group_copy(";
+  auto targetMemref = mlir::dyn_cast<mlir::MemRefType>(op.getTarget().getType());
   if (isCopySubView) {
     emitMemCpyValue(targetSubView.getSource());
     os << ", ";
@@ -632,20 +633,17 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
       emitValue(mlir::dyn_cast<Value>(upperBound));
     }
     os << ", 0);";
-  } else if (auto memref =
-                 mlir::dyn_cast<mlir::MemRefType>(op.getSource().getType())) {
-    if (isSimilar1D(memref)) {
+  } else {
+    if (isSimilar1D(targetMemref)) {
       emitMemCpyValue(op.getTarget());
       os << ", ";
       emitMemCpyValue(op.getSource());
       os << ", ";
-      os << memref.getNumElements();
+      os << targetMemref.getNumElements();
       os << ", 0);";
     } else {
       llvm_unreachable("mecpy unsupported memref::CopyOp");
     }
-  } else {
-    llvm_unreachable("mecpy unsupported memref::CopyOp");
   }
 
   emitInfoAndNewLine(op);
