@@ -11,6 +11,8 @@
 
 ## 项目文档
 
+[Triton SPIR-V 后端开发：矩阵乘实现验证](https://zhuanlan.zhihu.com/p/1925309765489230184)
+
 [Triton SPIR-V 后端开发：向量加实现验证](https://zhuanlan.zhihu.com/p/1914987075771561349)
 
 [Triton SPIR-V 后端开发：PyBind绑定](https://zhuanlan.zhihu.com/p/1914770426808206615)
@@ -22,11 +24,19 @@
 
 ## 作者相关技术文章
 
+[深度剖析 Triton编译器 MatMul优化（三）—— TMA](https://zhuanlan.zhihu.com/p/1924011555437155686)
+
+[深度剖析 Triton编译器 MatMul优化（二）—— MMA](https://zhuanlan.zhihu.com/p/1922921325296615496)
+
+[深度剖析 Triton编译器 MatMul优化（一）—— FMA](https://zhuanlan.zhihu.com/p/1922542705797465957)
+
 [浅析 Triton 执行流程](https://zhuanlan.zhihu.com/p/712640431)
 
-[Triton 社区首 PR：Bug 修复实录](https://zhuanlan.zhihu.com/p/1917136776885174369)
+[Triton 社区首贡献：Bug 修复实录](https://zhuanlan.zhihu.com/p/1917136776885174369)
 
 [从零开始教你写一个MLIR Pass](https://zhuanlan.zhihu.com/p/708819963)
+
+[MLIR学习可以参考的项目](https://zhuanlan.zhihu.com/p/1924384457349132481)
 
 [LeetGPU入门教程 (CUDA guide最佳实践)](https://zhuanlan.zhihu.com/p/1899956367734867434)
 
@@ -48,7 +58,7 @@ build-opt/third_party/spirv/tool/spirv-opt/spirv-opt third_party/spirv/test/add_
 ## 里程碑
 
 ### 2025.7.6
-[matrix-multiplication.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/matrix-multiplication.py) 跑通对上答案了
+[matrix-multiplication.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/02-matrix-multiplication.py) 跑通对上答案了
 
 ### 2025.6.7
 [vector-add.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/01-vector-add.py) 跑通对上答案了
