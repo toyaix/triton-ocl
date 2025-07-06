@@ -569,15 +569,17 @@ bool checkOneDimMemref(Value val) {
 }
 
 bool checkSubViewOffsetAndStride(memref::SubViewOp op) {
-  return isConstantIntValue(op.getMixedOffsets()[0], 0) &&
-         isConstantIntValue(op.getMixedStrides()[0], 1);
-}
-
-bool checkStride(Value val) {
-  if (auto memrefTy = mlir::dyn_cast<MemRefType>(val.getType())) {
-    return memrefTy.getRank() == 1;
+  for (auto off : op.getMixedOffsets()) {
+    if (!isConstantIntValue(off, 0)) {
+      return false;
+    }
   }
-  return false;
+  for (auto stride : op.getMixedStrides()) {
+    if (!isConstantIntValue(stride, 1)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void ModuleEmitter::emitMemCpyValue(Value val) {
