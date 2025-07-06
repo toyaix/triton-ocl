@@ -683,11 +683,21 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
     if (isSimilar1D(targetMemref)) {
       emitAsyncCopyWithConstant(op.getTarget(), op.getSource(),
                                 targetMemref.getNumElements());
-    } else {
-      llvm_unreachable("mecpy unsupported memref::CopyOp");
+    } else if (is2D(targetMemref)) {
+      if (auto castOp =
+              op.getSource().getDefiningOp<memref::ReinterpretCastOp>()) {
+        indent() << "for (int i = 0; i < ";
+        emitOpFoldResult(castOp.getMixedSizes()[0]);
+        os << "; i += 1) {\n";
+        addIndent();
+        emitAsyncCopyWithOpFoldResult(op.getTarget(), op.getSource(),
+                                      castOp.getMixedSizes()[1]);
+        os << "\n";
+        reduceIndent();
+        indent() << "}";
+      }
     }
   }
-
   emitInfoAndNewLine(op);
   indent() << "wait_group_events(1, &ev);\n";
 }
