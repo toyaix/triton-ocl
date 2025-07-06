@@ -58,18 +58,21 @@ def launch(gridX, gridY, gridZ, tt_kernel, bound_args):
     kernel = cl.clCreateKernel(program, tt_kernel.name.encode(), ctypes.byref(err))
     param_tys = [ty for (name, ty) in tt_kernel.src.signature.items()]
     buffers = {}
+    kernel_idx = 0
     for (idx, arg) in enumerate(bound_args):
         ty = param_tys[idx]
         if ty[0] == '*':
             nbytes = arg.element_size() * arg.numel()
             cl_buf = ctypes.c_void_p(cl.clCreateBuffer(context, CL_MEM_KERNEL, nbytes, ctypes.c_void_p(arg.data_ptr()), ctypes.byref(err)))
-            cl.clSetKernelArg(kernel, idx, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(cl_buf))
+            cl.clSetKernelArg(kernel, kernel_idx, ctypes.sizeof(ctypes.c_void_p), ctypes.byref(cl_buf))
+            kernel_idx += 1
             buffers[idx] = cl_buf
         elif ty == "constexpr":
             pass
         elif ty == 'i32':
             int_value = ctypes.c_int(arg)
-            cl.clSetKernelArg(kernel, idx, ctypes.sizeof(int_value), ctypes.byref(int_value))
+            cl.clSetKernelArg(kernel, kernel_idx, ctypes.sizeof(int_value), ctypes.byref(int_value))
+            kernel_idx += 1
         else:
             raise RuntimeError("Unsuport this kernel type, please add!")
 
