@@ -600,8 +600,6 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
   auto targetSubView = getSubviewOp(op.getTarget());
   bool isCopySubView = false;
   if (sourceSubView || targetSubView) {
-    assert(checkOneDimMemref(sourceSubView) && checkOneDimMemref(targetSubView) &&
-          "memcpy not support over 1D");
     assert(checkSubViewOffsetAndStride(sourceSubView) &&
           "source subview not support");
     assert(checkSubViewOffsetAndStride(targetSubView) &&
@@ -621,6 +619,14 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
     } else {
       emitValue(mlir::dyn_cast<Value>(upperBound));
     }
+    os << ", 0);";
+  } else {
+    emitMemCpyValue(op.getTarget());
+    os << ", ";
+    emitMemCpyValue(op.getSource());
+    os << ", ";
+    auto memref = cast<mlir::MemRefType>(op.getSource().getType());
+    os << memref.getNumElements();
     os << ", 0);";
   }
 
