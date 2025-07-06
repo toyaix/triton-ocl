@@ -48,7 +48,7 @@ build-opt/third_party/spirv/tool/spirv-opt/spirv-opt third_party/spirv/test/add_
 ## 里程碑
 
 ### 2025.7.6
-[matrix-multiplication.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/matrix-multiplication.py) 跑通对上答案了
+[matrix-multiplication.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/02-matrix-multiplication.py) 跑通对上答案了
 
 ### 2025.6.7
 [vector-add.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/01-vector-add.py) 跑通对上答案了

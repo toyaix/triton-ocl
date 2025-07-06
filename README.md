@@ -24,7 +24,7 @@ TRITON_SPIRV_BACKEND=1 python python/tutorials/spirv_demo/01-vector-add.py
 
 ### 2025.7.6
 
-Executed the [matrix-multiplication.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/matrix-multiplication.py) example and confirmed the correctness of results.
+Executed the [matrix-multiplication.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/02-matrix-multiplication.py) example and confirmed the correctness of results.
 
 ### 2025.6.7
 
