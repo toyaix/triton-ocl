@@ -595,15 +595,25 @@ void ModuleEmitter::emitMemCpyValue(Value val) {
   }
 }
 
+bool isSimilar1D(MemRefType memref) {
+  int numUnitDims = 0;
+  for (auto shape : memref.getShape()) {
+    if (shape == 1) {
+      numUnitDims += 1;
+    }
+  }
+  return memref.getRank() == 1 || numUnitDims == memref.getRank() - 1;
+}
+
 void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
   auto sourceSubView = getSubviewOp(op.getSource());
   auto targetSubView = getSubviewOp(op.getTarget());
   bool isCopySubView = false;
   if (sourceSubView || targetSubView) {
     assert(checkSubViewOffsetAndStride(sourceSubView) &&
-          "source subview not support");
+           "source subview not support");
     assert(checkSubViewOffsetAndStride(targetSubView) &&
-          "target subview not support");
+           "target subview not support");
     isCopySubView = true;
   }
 
@@ -620,14 +630,20 @@ void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
       emitValue(mlir::dyn_cast<Value>(upperBound));
     }
     os << ", 0);";
+  } else if (auto memref =
+                 mlir::dyn_cast<mlir::MemRefType>(op.getSource().getType())) {
+    if (isSimilar1D(memref)) {
+      emitMemCpyValue(op.getTarget());
+      os << ", ";
+      emitMemCpyValue(op.getSource());
+      os << ", ";
+      os << memref.getNumElements();
+      os << ", 0);";
+    } else {
+      llvm_unreachable("mecpy unsupported memref::CopyOp");
+    }
   } else {
-    emitMemCpyValue(op.getTarget());
-    os << ", ";
-    emitMemCpyValue(op.getSource());
-    os << ", ";
-    auto memref = cast<mlir::MemRefType>(op.getSource().getType());
-    os << memref.getNumElements();
-    os << ", 0);";
+    llvm_unreachable("mecpy unsupported memref::CopyOp");
   }
 
   emitInfoAndNewLine(op);
@@ -772,22 +788,6 @@ void ModuleEmitter::emitFunction(func::FuncOp func) {
     if (argIdx++ != func.getNumArguments() - 1)
       os << ",\n";
   }
-
-  // Emit results.
-  // auto funcReturn = cast<func::ReturnOp>(func.front().getTerminator());
-  // for (auto result : funcReturn.getOperands()) {
-  //   os << ",\n";
-  //   indent();
-    // TODO: a known bug, cannot return a value twice, e.g. return %0, %0 :
-    // index, index. However, typically this should not happen.
-    // if (mlir::isa<MemRefType>(result.getType()))
-    //   emitArrayDecl(result);
-    // else
-      // In Vivado HLS, pointer indicates the value is an output.
-  //     emitValue(result, /*rank=*/0, /*isPtr=*/true);
-
-  //   portList.push_back(result);
-  // }
 
   reduceIndent();
   os << "\n) {";
