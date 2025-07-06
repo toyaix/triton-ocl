@@ -63,6 +63,7 @@ __kernel void add_kernel(
   __global float* var_2,
   int var_3
 ) {	// L2
+  event_t ev = 0;
   int var_4 = get_global_id(0);
   int var_6 = var_4 * 1024;	// L7
   __local float var_8[1024];	// L10
@@ -81,9 +82,8 @@ __kernel void add_kernel(
     float var_18 = var_16 + var_17;	// L27
     var_8[var_15] = var_18;	// L28
   }
-  for (int i = 0; i < var_13; i += 1) {
-    var_2[i + var_6] = var_8[i];
-  }	// L33
+  ev = async_work_group_copy(var_2 + var_6, var_8 , var_13, 0);	// L33
+  wait_group_events(1, &ev);
 }
 """
 
