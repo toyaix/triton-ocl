@@ -11,6 +11,8 @@
 
 ## 项目文档
 
+[Triton SPIR-V 后端开发：矩阵乘实现验证](https://zhuanlan.zhihu.com/p/1925309765489230184)
+
 [Triton SPIR-V 后端开发：向量加实现验证](https://zhuanlan.zhihu.com/p/1914987075771561349)
 
 [Triton SPIR-V 后端开发：PyBind绑定](https://zhuanlan.zhihu.com/p/1914770426808206615)
@@ -30,7 +32,7 @@
 
 [浅析 Triton 执行流程](https://zhuanlan.zhihu.com/p/712640431)
 
-[Triton 社区首 PR：Bug 修复实录](https://zhuanlan.zhihu.com/p/1917136776885174369)
+[Triton 社区首贡献：Bug 修复实录](https://zhuanlan.zhihu.com/p/1917136776885174369)
 
 [从零开始教你写一个MLIR Pass](https://zhuanlan.zhihu.com/p/708819963)
 
