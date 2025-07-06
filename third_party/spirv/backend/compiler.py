@@ -95,6 +95,10 @@ class SPIRVBackend(BaseBackend):
         spirv.passes.memir.one_shot_bufferize(pm)
         spirv.passes.memir.linalg_to_affine_loops(pm)
         passes.common.add_canonicalizer(pm)
+        spirv.passes.memir.buffer_loop_hoisting(pm)
+        passes.common.add_canonicalizer(pm)
+        passes.common.add_cse(pm)
+        passes.common.add_symbol_dce(pm)
         pm.run(mod)
         return mod
 

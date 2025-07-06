@@ -569,24 +569,47 @@ bool checkOneDimMemref(Value val) {
 }
 
 bool checkSubViewOffsetAndStride(memref::SubViewOp op) {
-  return isConstantIntValue(op.getMixedOffsets()[0], 0) &&
-         isConstantIntValue(op.getMixedStrides()[0], 1);
+  for (auto off : op.getMixedOffsets()) {
+    if (!isConstantIntValue(off, 0)) {
+      return false;
+    }
+  }
+  for (auto stride : op.getMixedStrides()) {
+    if (!isConstantIntValue(stride, 1)) {
+      return false;
+    }
+  }
+  return true;
 }
 
-bool checkStride(Value val) {
-  if (auto memrefTy = mlir::dyn_cast<MemRefType>(val.getType())) {
-    return memrefTy.getRank() == 1;
-  }
-  return false;
+bool is1D(MemRefType memref) { return memref.getRank() == 1; }
+
+bool is2D(MemRefType memref) { return memref.getRank() == 2; }
+
+bool lessOrEqual2D(MemRefType memref) { return memref.getRank() <= 2; }
+
+bool isSimilar1D(MemRefType memref) {
+  for (int i = 0; i < memref.getRank() - 1; i++)
+    if (memref.getShape()[i] != 1)
+      return false;
+  return true;
 }
 
 void ModuleEmitter::emitMemCpyValue(Value val) {
+  auto memrefType = mlir::cast<MemRefType>(val.getType());
   if (auto castOp = val.getDefiningOp<memref::ReinterpretCastOp>()) {
     emitValue(castOp.getSource());
     os << " + ";
-    emitValue(mlir::dyn_cast<Value>(castOp.getMixedOffsets()[0]));
+    emitOpFoldResult(castOp.getMixedOffsets()[0]);
+    if (!isSimilar1D(memrefType)) {
+      os << " + i * ";
+      emitOpFoldResult(castOp.getMixedStrides()[0]);
+    }
   } else if (auto allocOp = val.getDefiningOp<memref::AllocOp>()) {
     emitValue(val);
+    if (!isSimilar1D(memrefType)) {
+      os << " + i";
+    }
   } else if (auto blockArg = mlir::dyn_cast<BlockArgument>(val)) {
     emitValue(val);
   } else {
@@ -595,35 +618,86 @@ void ModuleEmitter::emitMemCpyValue(Value val) {
   }
 }
 
+void ModuleEmitter::emitOpFoldResult(OpFoldResult opFoldResult) {
+  if (auto intAttr = getConstantIntValue(opFoldResult)) {
+    os << intAttr;
+  } else {
+    emitValue(mlir::dyn_cast<Value>(opFoldResult));
+  }
+}
+
+void ModuleEmitter::emitAsyncCopy(Value target, Value source) {
+  indent() << "ev = async_work_group_copy(";
+  emitMemCpyValue(target);
+  os << ", ";
+  emitMemCpyValue(source);
+  os << ", ";
+}
+
+void ModuleEmitter::emitAsyncCopyWithOpFoldResult(Value target, Value source,
+                                                  OpFoldResult num) {
+  emitAsyncCopy(target, source);
+  emitOpFoldResult(num);
+  os << ", 0);";
+}
+
+void ModuleEmitter::emitAsyncCopyWithConstant(Value target, Value source,
+                                              int num) {
+  emitAsyncCopy(target, source);
+  os << num << ", 0);";
+}
+
 void ModuleEmitter::emitMemCpy(memref::CopyOp op) {
   auto sourceSubView = getSubviewOp(op.getSource());
   auto targetSubView = getSubviewOp(op.getTarget());
   bool isCopySubView = false;
   if (sourceSubView || targetSubView) {
-    assert(checkOneDimMemref(sourceSubView) && checkOneDimMemref(targetSubView) &&
-          "memcpy not support over 1D");
     assert(checkSubViewOffsetAndStride(sourceSubView) &&
-          "source subview not support");
+           "source subview not support");
     assert(checkSubViewOffsetAndStride(targetSubView) &&
-          "target subview not support");
+           "target subview not support");
     isCopySubView = true;
   }
 
-  indent() << "ev = async_work_group_copy(";
+  auto targetMemref =
+      mlir::dyn_cast<mlir::MemRefType>(op.getTarget().getType());
+  assert(lessOrEqual2D(targetMemref) && "mecpy unsupported not support > 2D");
   if (isCopySubView) {
-    emitMemCpyValue(targetSubView.getSource());
-    os << ", ";
-    emitMemCpyValue(sourceSubView.getSource());
-    os << " , ";
-    OpFoldResult upperBound = targetSubView.getMixedSizes()[0];
-    if (auto intAttr = getConstantIntValue(upperBound)) {
-      os << intAttr;
-    } else {
-      emitValue(mlir::dyn_cast<Value>(upperBound));
+    if (is1D(targetMemref)) {
+      emitAsyncCopyWithOpFoldResult(targetSubView.getSource(),
+                                    sourceSubView.getSource(),
+                                    targetSubView.getMixedSizes()[0]);
+    } else if (is2D(targetMemref)) {
+      indent() << "for (int i = 0; i < ";
+      emitOpFoldResult(targetSubView.getMixedSizes()[0]);
+      os << "; i += 1) {\n";
+      addIndent();
+      emitAsyncCopyWithOpFoldResult(targetSubView.getSource(),
+                                    sourceSubView.getSource(),
+                                    targetSubView.getMixedSizes()[1]);
+      os << "\n";
+      reduceIndent();
+      indent() << "}";
     }
-    os << ", 0);";
+  } else {
+    if (isSimilar1D(targetMemref)) {
+      emitAsyncCopyWithConstant(op.getTarget(), op.getSource(),
+                                targetMemref.getNumElements());
+    } else if (is2D(targetMemref)) {
+      if (auto castOp =
+              op.getSource().getDefiningOp<memref::ReinterpretCastOp>()) {
+        indent() << "for (int i = 0; i < ";
+        emitOpFoldResult(castOp.getMixedSizes()[0]);
+        os << "; i += 1) {\n";
+        addIndent();
+        emitAsyncCopyWithOpFoldResult(op.getTarget(), op.getSource(),
+                                      castOp.getMixedSizes()[1]);
+        os << "\n";
+        reduceIndent();
+        indent() << "}";
+      }
+    }
   }
-
   emitInfoAndNewLine(op);
   indent() << "wait_group_events(1, &ev);\n";
 }
@@ -766,22 +840,6 @@ void ModuleEmitter::emitFunction(func::FuncOp func) {
     if (argIdx++ != func.getNumArguments() - 1)
       os << ",\n";
   }
-
-  // Emit results.
-  // auto funcReturn = cast<func::ReturnOp>(func.front().getTerminator());
-  // for (auto result : funcReturn.getOperands()) {
-  //   os << ",\n";
-  //   indent();
-    // TODO: a known bug, cannot return a value twice, e.g. return %0, %0 :
-    // index, index. However, typically this should not happen.
-    // if (mlir::isa<MemRefType>(result.getType()))
-    //   emitArrayDecl(result);
-    // else
-      // In Vivado HLS, pointer indicates the value is an output.
-  //     emitValue(result, /*rank=*/0, /*isPtr=*/true);
-
-  //   portList.push_back(result);
-  // }
 
   reduceIndent();
   os << "\n) {";
