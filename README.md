@@ -1,12 +1,20 @@
-# Triton-SPIRV
+<h3 align="center">
+Triton OpenCL backend 💡
+</h3>
 
-> Chinese Documentation - [中文文档](./README-ZH.md)
+<p align="center">
+<a href="https://triton-ocl.top"><b>🔗 triton-ocl.top</b></a>
+</p>
 
-A toy development branch to build an experimental SPIRV backend for [Triton](https://github.com/openai/triton). It is heavily inspired by [triton-lang/triton-cpu](https://github.com/triton-lang/triton-cpu) and [microsoft/triton-shared](https://github.com/microsoft/triton-shared).
+<p align="center">
+<a ><b>English</b></a> | <a href="README.zh.md"><b>中文</b></a>
+</p>
+
+A toy development branch to build an experimental OpenCL backend for [Triton](https://github.com/openai/triton). It is heavily inspired by [triton-lang/triton-cpu](https://github.com/triton-lang/triton-cpu) and [microsoft/triton-shared](https://github.com/microsoft/triton-shared).
 
 This repository clones the main Triton repository, but we intend to minimize
 divergences in the core (and ideally upstream anything that needs to change and
-isn't too SPIRV-specific). Most of the SPIRV work should be in a backend
+isn't too OpenCL-specific). Most of the OpenCL work should be in a backend
 subdirectory (similar to how GPU vendors are supported today).
 
 # How to use it?
@@ -24,11 +32,11 @@ TRITON_SPIRV_BACKEND=1 python python/tutorials/spirv_demo/01-vector-add.py
 
 ### 2025.7.6
 
-Executed the [matrix-multiplication.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/02-matrix-multiplication.py) example and confirmed the correctness of results.
+Executed the [matrix-multiplication.py](https://github.com/OpenMLIR/triton-ocl/blob/develop/python/tutorials/spirv_demo/02-matrix-multiplication.py) example and confirmed the correctness of results.
 
 ### 2025.6.7
 
-Executed the [vector-add.py](https://github.com/OpenMLIR/triton-spirv/blob/develop/python/tutorials/spirv_demo/01-vector-add.py) example and confirmed the correctness of results.
+Executed the [vector-add.py](https://github.com/OpenMLIR/triton-ocl/blob/develop/python/tutorials/spirv_demo/01-vector-add.py) example and confirmed the correctness of results.
 
 ### 2025.5.17
 
