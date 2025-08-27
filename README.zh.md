@@ -1,25 +1,33 @@
-# Triton-SPIRV
+<h3 align="center">
+Triton OpenCL backend 💡
+</h3>
 
-> 更多Triton相关请参考[英文文档](./README.md) - English Documentation
+<p align="center">
+<a href="https://www.zhihu.com/column/c_1906884474676945862"><b>开发文档</b></a> ｜ <a href="https://triton-ocl.top"><b>🔗 triton-ocl.top</b></a>
+</p>
+
+<p align="center">
+<a href="README.md"><b>English</b></a> | <a><b>中文</b></a>
+</p>
 
 > 项目编译安装在文末，初次使用请划到文档末尾。
 
 ## 项目目标
 
-本项目参考和拷贝了[triton-lang/triton-cpu](https://github.com/triton-lang/triton-cpu) 和 [microsoft/triton-shared](https://github.com/microsoft/triton-shared) 的大部份代码，目标是提供一个接入`Triton`的样本，完成`tutorials`的适配，大概率是个`Toy`。并跑在`Nvidia`的卡上，目标达到仅使用`CUDA CORE`的`Kernel`性能的`50%`及以上。目前项目的[代码变动](https://github.com/triton-lang/triton/compare/main...OpenMLIR:triton-spirv-preview:develop)
+本项目参考和拷贝了[triton-lang/triton-cpu](https://github.com/triton-lang/triton-cpu) 和 [microsoft/triton-shared](https://github.com/microsoft/triton-shared) 的大部份代码，目标是提供一个接入`Triton`的样本，完成`tutorials`的适配，大概率是个`Toy`。并跑在`Nvidia`的卡上，目标达到仅使用`CUDA CORE`的`Kernel`性能的`50%`及以上。目前项目的[代码变动](https://github.com/OpenMLIR/triton-ocl/compare/base-develop...OpenMLIR:triton-ocl:develop)
 
 
 ## 项目文档
 
-[Triton SPIR-V 后端开发：矩阵乘实现验证](https://zhuanlan.zhihu.com/p/1925309765489230184)
+[Triton SPIR-V 后端开发：矩阵乘实现验证(953bff6)](https://zhuanlan.zhihu.com/p/1925309765489230184)
 
-[Triton SPIR-V 后端开发：向量加实现验证](https://zhuanlan.zhihu.com/p/1914987075771561349)
+[Triton SPIR-V 后端开发：向量加实现验证(f66f77c)](https://zhuanlan.zhihu.com/p/1914987075771561349)
 
-[Triton SPIR-V 后端开发：PyBind绑定](https://zhuanlan.zhihu.com/p/1914770426808206615)
+[Triton SPIR-V 后端开发：PyBind绑定(457f0aa)](https://zhuanlan.zhihu.com/p/1914770426808206615)
 
-[Triton SPIR-V 后端开发：新增Pass](https://zhuanlan.zhihu.com/p/1914706253290120299)
+[Triton SPIR-V 后端开发：新增Pass(08b0e35)](https://zhuanlan.zhihu.com/p/1914706253290120299)
 
-[Triton SPIR-V 后端开发：backend 初始化](https://zhuanlan.zhihu.com/p/1907141200789602446)
+[Triton SPIR-V 后端开发：backend 初始化(02ff396)](https://zhuanlan.zhihu.com/p/1907141200789602446)
 
 
 ## 作者相关技术文章
@@ -31,6 +39,8 @@
 [深度剖析 Triton编译器 MatMul优化（一）—— FMA](https://zhuanlan.zhihu.com/p/1922542705797465957)
 
 [浅析 Triton 执行流程](https://zhuanlan.zhihu.com/p/712640431)
+
+[新兴 Python 算子开发：Triton、CuTeDSL、MOJO 🔥等概览](https://zhuanlan.zhihu.com/p/1919816304271028292)
 
 [Triton 社区首贡献：Bug 修复实录](https://zhuanlan.zhihu.com/p/1917136776885174369)
 
